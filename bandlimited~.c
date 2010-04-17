@@ -108,14 +108,31 @@ typedef struct _bandlimited
 		int max_harmonics_mod;
 		int max_harmonics;
 		
-		t_float dutycycle;
+
 		
 		//type
 		t_float (*generator)(int, t_float, t_float);
+		t_float (*dutycycle)(t_float);
 
 		
 	} t_bandlimited;
 
+
+static t_float bandlimite_nodutycycle(t_float in) {
+	return 1.0f;
+}
+
+static t_float bandlimite_pulsedutycycle(t_float in) {
+	t_float dc;
+	dc = in;
+	if(dc < 0.0)
+		dc *= -1.0f;
+	dc = dc - (int)(dc/1.0f);
+	dc = 1.0f - dc;
+	if(dc <= 0.0f)
+		dc=1.0f;
+	return dc;
+}
 
 static inline t_float bandlimited_sin(t_float in) {
     double dphase;
@@ -209,18 +226,23 @@ static t_float bandlimited_rsaw(int max_harmonics, t_float p, t_float dutycycle)
 static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 	if(strcmp(GETSTRING(type), "saw") == 0) {
 		x->generator=  &bandlimited_saw;
+		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
 		x->generator=  &bandlimited_rsaw;
+		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "square") == 0) {
 		x->generator=  &bandlimited_square;
+		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
 		x->generator=  &bandlimited_triangle;
+		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "pulse") == 0) {
 		x->generator=  &bandlimited_pulse;
+		x->dutycycle= &bandlimite_pulsedutycycle;
 		x->max_harmonics_mod=2;
 	} else {
 		goto type_unknown;
@@ -237,13 +259,13 @@ static void *bandlimited_new(t_symbol *type, t_floatarg f) {
 	x->cutoff=0;
     x->x_f = f;
 	x->s_nq=0;
-	x->dutycycle=1.0f;
 	x->max_harmonics=BANDLIMITED_MAXHARMONICS;
 	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
 	}
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
+	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);	
     x->x_phase = 0;
     x->x_conv = 0;	
     outlet_new(&x->x_obj, gensym("signal"));
@@ -280,18 +302,7 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 }
 
 
-static void bandlimited_dutycycle(t_bandlimited *x, t_float f)
-{
-	if(f < 0.0)
-		f *= -1.0f;
-	f = f - (int)(f/1.0f);
-	f = 1.0f - f;
-	if(f <= 0.0f)
-		f=1.0f;
-	post("bandlimited~: setting dutycycle %f", f);
-	x->dutycycle = f;
 
-}
 
 
 static void bandlimited_type(t_bandlimited *x, t_symbol *type)
@@ -335,9 +346,11 @@ static t_int *bandlimited_perform(t_int *w)
 {
     t_bandlimited *x = (t_bandlimited *)(w[1]);
     t_float *in = (t_float *)(w[2]);
-    t_float *out = (t_float *)(w[3]);
-    int n = (int)(w[4]);
+    t_float *dutycycle = (t_float *)(w[3]);
+    t_float *out = (t_float *)(w[4]);
+    int n = (int)(w[5]);
 	t_float p;
+
 
 	int max_harmonics = (int)( x->cutoff / *in);
 	if(max_harmonics > x->max_harmonics)
@@ -347,12 +360,12 @@ static t_int *bandlimited_perform(t_int *w)
     {
 
 		p = bandlimited_phasor(x, *in++);
-		*out++ = x->generator(max_harmonics, p, x->dutycycle);
+		*out++ = x->generator(max_harmonics, p, x->dutycycle(*dutycycle++));
 		
 
 		
     }
-    return (w+5);
+    return (w+6);
 }
 
 static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
@@ -365,7 +378,8 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 		error("bandlimited~: %f is greater than the nyquist limit %f, you are warned", x->cutoff, x->s_nq);
 	}
     
-	dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
+	dsp_add(bandlimited_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
+	//dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
 }
 
 static void bandlimite_dmaketable(void)
@@ -403,8 +417,7 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
-    class_addmethod(bandlimited_class, (t_method)bandlimited_dutycycle,
-					gensym("dutycycle"), A_FLOAT, 0);		
+		
     bandlimite_dmaketable();
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
 

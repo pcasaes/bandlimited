@@ -37,6 +37,10 @@
 #X text 434 83 <= 0 resets to nyquist;
 #X msg 427 174 max \$1;
 #X floatatom 433 150 5 0 0 0 - - -;
+#X floatatom 534 140 5 0 0 0 - - -;
+#X msg 453 227 dutycycle \$1;
+#X msg 730 259 resize 10000;
+#X msg 125 202 type pulse;
 #X connect 0 0 20 0;
 #X connect 1 0 0 0;
 #X connect 5 0 4 0;
@@ -66,3 +70,7 @@
 #X connect 29 0 28 0;
 #X connect 31 0 22 0;
 #X connect 32 0 31 0;
+#X connect 33 0 34 0;
+#X connect 34 0 22 0;
+#X connect 35 0 8 0;
+#X connect 36 0 22 0;

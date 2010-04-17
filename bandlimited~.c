@@ -108,8 +108,10 @@ typedef struct _bandlimited
 		int max_harmonics_mod;
 		int max_harmonics;
 		
+		t_float dutycycle;
+		
 		//type
-		t_float (*generator)(int, t_float);
+		t_float (*generator)(int, t_float, t_float);
 
 		
 	} t_bandlimited;
@@ -139,20 +141,34 @@ static inline t_float bandlimited_sin(t_float in) {
 	
 }
 
-static t_float bandlimited_square(int max_harmonics, t_float p) {
+static t_float bandlimited_square(int max_harmonics, t_float p, t_float dutycycle) {
 	int i;
 	t_float sum=0.0f;
 	
 	
 	for(i = 1; i <= max_harmonics; i += 2) {
 		
-		sum += bandlimited_sin(p * i)/i;
+		sum += bandlimited_sin(p * i )/i;
 	}
 	
 	return  4.0f *  sum / BANDLIMITED_PI;
 }
 
-static t_float bandlimited_triangle(int max_harmonics, t_float p) {
+static t_float bandlimited_pulse(int max_harmonics, t_float p, t_float dutycycle) {
+	int i;
+	t_float sum=0.0f;
+	
+	
+	for(i = 1; i <= max_harmonics; i += 2) {
+		
+		sum += bandlimited_sin(p * i * dutycycle)/i;
+	}
+	
+	return  4.0f *  sum / BANDLIMITED_PI;
+}
+
+
+static t_float bandlimited_triangle(int max_harmonics, t_float p, t_float dutycycle) {
 	int i;
 	t_float sum=0.0f;
 	
@@ -167,7 +183,7 @@ static t_float bandlimited_triangle(int max_harmonics, t_float p) {
 	return  8.0f *  sum / BANDLIMITED_PISQ;
 }
 
-static inline t_float bandlimited_sawwave(int max_harmonics, t_float p) {
+static inline t_float bandlimited_sawwave(int max_harmonics, t_float p, t_float dutycycle) {
 	int i;
 	t_float sum=0.0f;
 	
@@ -179,14 +195,14 @@ static inline t_float bandlimited_sawwave(int max_harmonics, t_float p) {
 	return   sum / BANDLIMITED_PI;
 }
 
-static t_float bandlimited_saw(int max_harmonics, t_float p) {
+static t_float bandlimited_saw(int max_harmonics, t_float p, t_float dutycycle) {
 	
-	return -2.0f * bandlimited_sawwave(max_harmonics, p);
+	return -2.0f * bandlimited_sawwave(max_harmonics, p, dutycycle);
 
 }
 
-static t_float bandlimited_rsaw(int max_harmonics, t_float p) {
-	return 2.0f * bandlimited_sawwave(max_harmonics, p);
+static t_float bandlimited_rsaw(int max_harmonics, t_float p, t_float dutycycle) {
+	return 2.0f * bandlimited_sawwave(max_harmonics, p, dutycycle);
 }
 
 
@@ -203,6 +219,9 @@ static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
 		x->generator=  &bandlimited_triangle;
 		x->max_harmonics_mod=2;
+	} else if(strcmp(GETSTRING(type), "pulse") == 0) {
+		x->generator=  &bandlimited_pulse;
+		x->max_harmonics_mod=2;
 	} else {
 		goto type_unknown;
 
@@ -218,6 +237,7 @@ static void *bandlimited_new(t_symbol *type, t_floatarg f) {
 	x->cutoff=0;
     x->x_f = f;
 	x->s_nq=0;
+	x->dutycycle=1.0f;
 	x->max_harmonics=BANDLIMITED_MAXHARMONICS;
 	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
@@ -260,6 +280,18 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 }
 
 
+static void bandlimited_dutycycle(t_bandlimited *x, t_float f)
+{
+	if(f < 0.0)
+		f *= -1.0f;
+	f = f - (int)(f/1.0f);
+	f = 1.0f - f;
+	if(f <= 0.0f)
+		f=1.0f;
+	post("bandlimited~: setting dutycycle %f", f);
+	x->dutycycle = f;
+
+}
 
 
 static void bandlimited_type(t_bandlimited *x, t_symbol *type)
@@ -315,7 +347,7 @@ static t_int *bandlimited_perform(t_int *w)
     {
 
 		p = bandlimited_phasor(x, *in++);
-		*out++ = x->generator(max_harmonics, p);
+		*out++ = x->generator(max_harmonics, p, x->dutycycle);
 		
 
 		
@@ -371,6 +403,8 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
+    class_addmethod(bandlimited_class, (t_method)bandlimited_dutycycle,
+					gensym("dutycycle"), A_FLOAT, 0);		
     bandlimite_dmaketable();
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
 

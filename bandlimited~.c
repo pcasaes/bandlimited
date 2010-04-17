@@ -23,6 +23,8 @@ http://http://gitorious.org/~saturno
 mailto:irmaosaturno@gmail.com
 
 
+ 
+ Code was liberally borrowed from d_osc.c
 
 */
 
@@ -32,7 +34,11 @@ mailto:irmaosaturno@gmail.com
 
 #define BANDLIMITED_PI     3.14159265358979323846
 #define BANDLIMITED_PISQ   9.8696044010893586188
+
+#ifdef BANDLIMITED_MAXHARMONICS
+#else
 #define BANDLIMITED_MAXHARMONICS 734 // about 24hz at 44.1khz
+#endif
 
 #define GETSTRING(s) (s)->s_name
 
@@ -98,6 +104,9 @@ typedef struct _bandlimited
 		//bandlimited
 		float s_nq;
 		float cutoff;
+		int max_harmonics_set;
+		int max_harmonics_mod;
+		int max_harmonics;
 		
 		//type
 		t_float (*generator)(int, t_float);
@@ -182,18 +191,23 @@ static t_float bandlimited_rsaw(int max_harmonics, t_float p) {
 
 
 static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
-	if(strcmp(GETSTRING(type), "saw") == 0)
+	if(strcmp(GETSTRING(type), "saw") == 0) {
 		x->generator=  &bandlimited_saw;
-	else if(strcmp(GETSTRING(type), "rsaw") == 0)
+		x->max_harmonics_mod=1;
+	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
 		x->generator=  &bandlimited_rsaw;
-	else if(strcmp(GETSTRING(type), "square") == 0)
+		x->max_harmonics_mod=1;
+	} else if(strcmp(GETSTRING(type), "square") == 0) {
 		x->generator=  &bandlimited_square;
-	else if(strcmp(GETSTRING(type), "triangle") == 0)
+		x->max_harmonics_mod=2;
+	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
 		x->generator=  &bandlimited_triangle;
-	else {
+		x->max_harmonics_mod=2;
+	} else {
 		goto type_unknown;
 
 	}
+	x->max_harmonics = x->max_harmonics * x->max_harmonics_mod;
 	return 0;
 type_unknown:
 	return 1;
@@ -203,6 +217,8 @@ static void *bandlimited_new(t_symbol *type, t_floatarg f) {
     t_bandlimited *x = (t_bandlimited *)pd_new(bandlimited_class);
 	x->cutoff=0;
     x->x_f = f;
+	x->s_nq=0;
+	x->max_harmonics=BANDLIMITED_MAXHARMONICS;
 	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
@@ -222,13 +238,27 @@ static void bandlimited_ft1(t_bandlimited *x, t_float f)
 
 static void bandlimited_cutoff(t_bandlimited *x, t_float f)
 {
-	if(f > x->s_nq) 
-		error("bandlimited~: %f is greater than th nyquist limit %f, ignoring", f, x->s_nq);
-	else if(f <=0 )
+	if(x->s_nq != 0 && f > x->s_nq) 
+		error("bandlimited~: %f is greater than the nyquist limit %f, ignoring", f, x->s_nq);
+	else if(f < 1 )
 		x->cutoff = x->s_nq-1;
 	else 
 	x->cutoff = f;
 }
+
+static void bandlimited_max(t_bandlimited *x, t_float f)
+{
+	int val = (int)f;
+	if(val < 1) {
+		val = BANDLIMITED_MAXHARMONICS;
+	}
+	else if(val > BANDLIMITED_MAXHARMONICS) 
+		post("bandlimited~: maximum number of harmonics %d might be too high. you are warned", val);
+	x->max_harmonics_set = val;
+	x->max_harmonics = x->max_harmonics_set * x->max_harmonics_mod;
+	
+}
+
 
 
 
@@ -276,9 +306,10 @@ static t_int *bandlimited_perform(t_int *w)
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
 	t_float p;
+
 	int max_harmonics = (int)( x->cutoff / *in);
-	if(max_harmonics > BANDLIMITED_MAXHARMONICS)
-		max_harmonics = BANDLIMITED_MAXHARMONICS;
+	if(max_harmonics > x->max_harmonics)
+		max_harmonics = x->max_harmonics;
 	
     while (n--)
     {
@@ -297,9 +328,12 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 	x->x_conv = 1./sp[0]->s_sr;
 	x->s_nq = sp[0]->s_sr / 2.0f;
 	if(x->cutoff == 0)
-		
 		x->cutoff = ( x->s_nq)  - 1.0;
-    dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
+	else if(x->cutoff > x->s_nq) {
+		error("bandlimited~: %f is greater than the nyquist limit %f, you are warned", x->cutoff, x->s_nq);
+	}
+    
+	dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
 }
 
 static void bandlimite_dmaketable(void)
@@ -335,7 +369,10 @@ extern void bandlimited_tilde_setup(void)
 					gensym("type"), A_SYMBOL, 0);	
     class_addmethod(bandlimited_class, (t_method)bandlimited_cutoff,
 					gensym("cutoff"), A_FLOAT, 0);		
+    class_addmethod(bandlimited_class, (t_method)bandlimited_max,
+					gensym("max"), A_FLOAT, 0);		
     bandlimite_dmaketable();
-	//class_sethelpsymbol(bandlimited_class, gensym("bandlimited~-help.pd"));
+	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
+
 
 }

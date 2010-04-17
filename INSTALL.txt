@@ -1,0 +1,21 @@
+To compile run
+
+>make linux
+
+or
+
+>make darwin
+(a darwin universal build should be included already)
+
+or
+>make win32
+
+Copy the external to your path.
+
+Make might complain the m_pd.h is missing. You can either change the Makefile to point to its proper place or copy it to the muug folder.
+
+In windows make will look for pd.dll in c:/Arquivos\ de\ programas/pd/bin/, if PD is not installed there you should change that path.
+
+The flags  -funroll-loops -pipe -fomit-frame-pointer -ffast-math
+were added to the build since the object takes up a lot of processing power. Change them if their not appropriate for your machine.
+

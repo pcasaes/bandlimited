@@ -1,4 +1,4 @@
-#N canvas 676 214 992 349 10;
+#N canvas 632 122 1030 565 10;
 #X obj 246 37 mtof;
 #X floatatom 246 12 5 0 0 0 - - -;
 #X obj 320 303 dac~;
@@ -58,6 +58,9 @@
 #X obj 537 134 /~ 1.1;
 #X floatatom 491 110 5 0 0 0 - - -;
 #X obj 227 152 bandlimited~ pulse 77.78 0 0;
+#X obj 244 410 bl.sq~;
+#X floatatom 304 358 5 0 0 0 - - -;
+#X msg 279 378 max \$1;
 #X connect 0 0 20 0;
 #X connect 1 0 0 0;
 #X connect 5 0 4 0;
@@ -101,3 +104,5 @@
 #X connect 51 0 4 0;
 #X connect 51 0 11 0;
 #X connect 51 0 36 0;
+#X connect 53 0 54 0;
+#X connect 54 0 52 1;

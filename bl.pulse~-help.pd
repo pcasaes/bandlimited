@@ -1,0 +1,104 @@
+#N canvas 656 388 597 484 10;
+#X obj 35 278 dac~;
+#X obj 40 249 *~;
+#N canvas 0 22 542 489 fader 0;
+#X obj 97 310 dbtorms;
+#X obj 100 102 vsl 30 64 101 1 1 0 empty empty empty 0 -9 0 10 -203904
+-1 -1 0 1;
+#X obj 93 238 - 1;
+#X msg 93 260 100 \$1;
+#X obj 94 282 -;
+#X obj 96 372 outlet~;
+#X obj 98 348 line~;
+#X msg 102 325 \$1 2;
+#X connect 0 0 7 0;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 4 0 0 0;
+#X connect 6 0 5 0;
+#X connect 7 0 6 0;
+#X coords 0 -1 1 1 30 70 2 100 100;
+#X restore 77 223 pd fader;
+#X obj 302 193 dac~;
+#X obj 307 164 *~;
+#N canvas 0 22 542 489 fader 0;
+#X obj 97 310 dbtorms;
+#X obj 100 102 vsl 30 64 101 1 1 0 empty empty empty 0 -9 0 10 -203904
+-1 -1 0 1;
+#X obj 93 238 - 1;
+#X msg 93 260 100 \$1;
+#X obj 94 282 -;
+#X obj 96 372 outlet~;
+#X obj 98 348 line~;
+#X msg 102 325 \$1 2;
+#X connect 0 0 7 0;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 4 0 0 0;
+#X connect 6 0 5 0;
+#X connect 7 0 6 0;
+#X coords 0 -1 1 1 30 70 2 100 100;
+#X restore 370 138 pd fader;
+#X obj 279 53 osc~ 2;
+#X obj 279 73 *~ 3;
+#X obj 279 113 mtof~;
+#X text 8 -44 creation paramters:;
+#X text 35 -29 1 frequency;
+#X text 35 -16 2 max number of generated harmonics (non-zero harmonics)
+;
+#X text 35 -2 3 cut off frequency \, stops generating harmonics at
+this frequency (cannot be higher than the nyquist limit);
+#X text 327 62 default max harmonics is 734;
+#X text 327 78 default cut off frequency is nyquist limit;
+#X obj 41 158 mtof;
+#X floatatom 41 136 5 0 0 0 - - -;
+#X text 10 391 (C) Paulo Casaes \, 2010 GPL v2;
+#X msg 112 82 max \$1;
+#X floatatom 112 62 5 0 734 0 - - -;
+#X floatatom 141 108 5 0 22050 0 - - -;
+#X msg 141 128 cutoff \$1;
+#X floatatom 152 158 5 0 0 1 phase - -;
+#X text 147 65 comment;
+#X text 200 219 max method sets the max number of generated harmonis
+\, 0 sets default (374).;
+#X text 199 248 cutoff sets cutoff frequency \, 0 sets default (nyquist
+limit). Any value greater than the nyquist limit will be ignored.;
+#X obj 279 93 +~ 33;
+#X obj 250 377 bandlimited~ saw 0 1;
+#X obj 250 398 bl.tri~ 0 1;
+#X text 216 386 see:;
+#X obj 325 398 bl.saw~ 0 1;
+#X obj 385 377 bl.rsaw~ 0 1;
+#X obj 279 134 bl.pulse~;
+#X obj 40 201 bl.pulse~ 77 80 7000 0.75;
+#X floatatom 193 179 5 -1 1 1 duty_cycle - -;
+#X obj 401 398 bl.sq~ 0 1;
+#X text 269 -50 Genereates a bandlimited pulse wave;
+#X text 35 27 4 duty cycle \, the ratio of the pulse duration and the
+period.;
+#X text 198 294 the third inlet takes the pulse wave's duty cycle (-1.0
+- 1.0) \, the default value 0 along with 1 and -1 generates a square
+wave. Positive values place the pulse on the positive amplitude while
+negative values places it on the negative end.;
+#X connect 1 0 0 0;
+#X connect 1 0 0 1;
+#X connect 2 0 1 1;
+#X connect 4 0 3 0;
+#X connect 4 0 3 1;
+#X connect 5 0 4 1;
+#X connect 6 0 7 0;
+#X connect 7 0 26 0;
+#X connect 8 0 32 0;
+#X connect 15 0 33 0;
+#X connect 16 0 15 0;
+#X connect 18 0 33 1;
+#X connect 19 0 18 0;
+#X connect 20 0 21 0;
+#X connect 21 0 33 1;
+#X connect 22 0 33 1;
+#X connect 26 0 8 0;
+#X connect 32 0 4 0;
+#X connect 33 0 1 0;
+#X connect 34 0 33 2;

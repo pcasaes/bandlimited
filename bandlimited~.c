@@ -541,7 +541,7 @@ static void bandlimited_dmaketable(void)
 	 recompiled the other way. */
     tf.tf_d = UNITBIT32 + 0.5;
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
-        bug("cos~: unexpected machine alignment");
+        bug("bandlimited~: unexpected machine alignment");
 }
 
 

@@ -41,6 +41,8 @@ mailto:irmaosaturno@gmail.com
 #endif
 
 #define GETSTRING(s) (s)->s_name
+#define ISFLOAT(a) (a.a_type==A_FLOAT)
+#define ISSYMBOL(a) (a.a_type==A_SYMBOL)
 
 #define UNITBIT32 1572864.  /* 3*2^19; bit 32 has place value 1 */
 
@@ -295,12 +297,56 @@ type_unknown:
 	return 1;
 }
 
-static void *bandlimited_new(t_symbol *type, t_floatarg f) {
-    t_bandlimited *x = (t_bandlimited *)pd_new(bandlimited_class);
-	x->cutoff=0;
+static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
+	t_bandlimited *x;// = (t_bandlimited *)pd_new(bandlimited_class);
+	t_float  f;
+	t_symbol *type;
+	t_float  max_harmonics;
+	t_float	cutoff;
+
+	if(argc == 0) {
+		error("bandlimited~: missing first argument: type (saw, rsaw, square, triangle, pulse)");
+		goto new_error;
+	} else if(!ISSYMBOL(argv[0])) {
+		error("bandlimited~: first argument must be a symbol: type (saw, rsaw, square, triangle, pulse)");
+		goto new_error;
+	} 
+	type = atom_getsymbol(&argv[0]);
+	
+	if(argc > 1) {
+		if(!ISFLOAT(argv[1])) {
+			error("bandlimited~: second argument must be a float: initial frequency");
+			goto new_error;
+		}
+		f = atom_getfloat(&argv[1]);
+	} else {
+		f=0;
+	}
+	if(argc > 2) {
+		if(!ISFLOAT(argv[2])) {
+			error("bandlimited~: third argument must be a float: max number of generated harmonics (default %d)", BANDLIMITED_MAXHARMONICS);
+			goto new_error;
+		}
+		max_harmonics = atom_getfloat(&argv[2]);
+		if(max_harmonics <= 0)
+			max_harmonics = BANDLIMITED_MAXHARMONICS;
+	} else {
+		max_harmonics=BANDLIMITED_MAXHARMONICS;
+	}
+	if(argc > 3) {
+		if(!ISFLOAT(argv[3])) {
+			error("bandlimited~: third argument must be a float: cutoff frequency (default nyquist limit)");
+			goto new_error;
+		}
+		cutoff = atom_getfloat(&argv[3]);
+	} else {
+		cutoff=0;
+	}	
+    x = (t_bandlimited *)pd_new(bandlimited_class);
+	x->cutoff=cutoff;
     x->x_f = f;
 	x->s_nq=0;
-	x->max_harmonics=BANDLIMITED_MAXHARMONICS;
+	x->max_harmonics=max_harmonics;
 	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
@@ -313,6 +359,9 @@ static void *bandlimited_new(t_symbol *type, t_floatarg f) {
     outlet_new(&x->x_obj, gensym("signal"));
 
     return (x);
+	
+new_error:
+	return 0;
 }
 
 static void bandlimited_ft1(t_bandlimited *x, t_float f)
@@ -448,7 +497,7 @@ static void bandlimite_dmaketable(void)
 extern void bandlimited_tilde_setup(void)
 {
     bandlimited_class = class_new(gensym("bandlimited~"), (t_newmethod)bandlimited_new, 0,
-						  sizeof(t_bandlimited), 0, A_DEFSYMBOL, A_DEFFLOAT, 0);
+						  sizeof(t_bandlimited), 0, A_GIMME, 0); //A_DEFSYMBOL, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT
     CLASS_MAINSIGNALIN(bandlimited_class, t_bandlimited, x_f);
     class_addmethod(bandlimited_class, (t_method)bandlimited_dsp, gensym("dsp"), 0);
     class_addmethod(bandlimited_class, (t_method)bandlimited_ft1,

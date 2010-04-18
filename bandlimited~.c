@@ -262,18 +262,22 @@ static t_float bandlimited_rsaw(void *o, int max_harmonics, t_float p) {
 
 static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 	if(strcmp(GETSTRING(type), "saw") == 0) {
+		x->x_phase_mod=0;
 		x->generator=  &bandlimited_saw;
 		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
+		x->x_phase_mod=0;
 		x->generator=  &bandlimited_rsaw;
 		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "square") == 0) {
+		x->x_phase_mod=0;
 		x->generator=  &bandlimited_square;
 		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
+		x->x_phase_mod=0;
 		x->generator=  &bandlimited_triangle;
 		x->dutycycle= &bandlimite_nodutycycle;
 		x->max_harmonics_mod=2;

@@ -134,6 +134,8 @@ static void bandlimited_pulsedutycycle(void *o, t_float in) {
 	int setmod;
 	dc = in; ///2.0f;
 	t_float dcm;
+
+	dc = 2.0f * (dc - (int)(dc)) - 1.0f;	
 	
 	setmod = dc < 0.0;
 	if(setmod) {
@@ -141,7 +143,7 @@ static void bandlimited_pulsedutycycle(void *o, t_float in) {
 	} else {
 		x->x_phase_mod=0;
 	}
-	dc = dc - (int)(dc);
+
 	dc /= 2.0f;
 	dcm = dc * -1;
 	dc = 1.0f - dc;
@@ -352,7 +354,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 		dc = atom_getfloat(&argv[4]);
 		initialdc=1;
 	} else {
-		dc=0;
+		dc=0.5f;
 		initialdc=0;
 	}
 	

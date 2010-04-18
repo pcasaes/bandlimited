@@ -74,6 +74,8 @@ limit). Any value greater than the nyquist limit will be ignored.;
 #X obj 40 187 bl.rsaw~ 77 80 7000;
 #X text 269 -50 Genereates a bandlimited reverse saw wave;
 #X obj 279 120 bl.rsaw~;
+#X obj 392 301 bl.pulse~ 0 1;
+#X obj 464 279 bl.vpulse~ 0 1;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;
 #X connect 2 0 1 1;

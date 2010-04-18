@@ -74,6 +74,8 @@ limit). Any value greater than the nyquist limit will be ignored.;
 #X obj 325 301 bl.sq~ 0 1;
 #X text 220 287 see:;
 #X obj 383 280 bl.rsaw~ 0 1;
+#X obj 397 302 bl.pulse~ 0 1;
+#X obj 465 280 bl.vpulse~ 0 1;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;
 #X connect 2 0 1 1;

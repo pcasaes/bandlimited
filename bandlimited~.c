@@ -259,6 +259,26 @@ static t_float bandlimited_saw(void *o, int max_harmonics, t_float p) {
 
 }
 
+static t_float bandlimited_sawtriangle(void *o, int max_harmonics, t_float p) {
+	
+	int i;
+	t_float sumt=0.0f;
+	t_float sums=0.0f;
+	t_float sinc;
+	
+	
+	for(i = 1; i <= max_harmonics; i ++) {
+		sinc = bandlimited_sin(p * i);
+		if(i%2 == 1)
+			sumt += (sinc/powf(i, 2.0f)) * (i%4==3 ? -1 : 1 );
+		sums += sinc/i;
+		
+	}
+	
+	return  (8.0f *  sumt / BANDLIMITED_PISQ) + (-2.0f *  sums / BANDLIMITED_PI) ;
+	
+}
+
 static t_float bandlimited_rsaw(void *o, int max_harmonics, t_float p) {
 	return 2.0f * bandlimited_sawwave(o, max_harmonics, p);
 }
@@ -285,7 +305,12 @@ static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 		x->generator=  &bandlimited_triangle;
 		x->dutycycle= &bandlimited_nodutycycle;
 		x->max_harmonics_mod=2;
-	} else if(strcmp(GETSTRING(type), "pulse") == 0) {
+	} else if(strcmp(GETSTRING(type), "sawtriangle") == 0) {
+		x->x_phase_mod=0;
+		x->generator=  &bandlimited_sawtriangle;
+		x->dutycycle= &bandlimited_nodutycycle;
+		x->max_harmonics_mod=1;
+	}  else if(strcmp(GETSTRING(type), "pulse") == 0) {
 		x->generator=  &bandlimited_pulse;
 		x->dutycycle= &bandlimited_pulsedutycycle;
 		x->max_harmonics_mod=2;

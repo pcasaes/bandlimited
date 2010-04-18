@@ -118,6 +118,7 @@ typedef struct _bandlimited
 		t_float (*generator)(void *, int, t_float);
 		void (*dutycycle)(void *, t_float);
 		t_float dc;
+		t_float dcset;
 		int initialdc;
 
 		
@@ -128,50 +129,34 @@ static void bandlimited_nodutycycle(void *o, t_float in) {
 
 }
 
+
+
+
 static void bandlimited_pulsedutycycle(void *o, t_float in) {
 	t_bandlimited *x = (t_bandlimited *)o;
 	t_float dc;
-	int setmod;
 	dc = in; ///2.0f;
-	t_float dcm;
 
-	dc = 2.0f * (dc - (int)(dc)) - 1.0f;	
+
+	dc = (dc - (int)(dc));	
 	
-	setmod = dc < 0.0;
-	if(setmod) {
-		dc *= -1.0f;
-	} else {
-		x->x_phase_mod=0;
-	}
-
-	dc /= 2.0f;
-	dcm = dc * -1;
-	dc = 1.0f - dc;
 	if(dc <= 0.0f)
 		dc=1.0f;
-	if(setmod && (x->dc != dc || x->x_phase_mod == 0.0f)) {
-		//in /= 2.0f;
-		//try still
-		//x->x_phase_mod = 2.55883f*pow(dcm, 4) +0.696396f*pow(dcm,3)+0.737736f*powf(dcm, 2) - 0.485341f*dcm +0.50001f;
+
+	if(dc != x->dcset) {
+		x->dcset=dc;
 	
-		
-		x->x_phase_mod = -1.83892f*pow(dcm,3)-0.0356073f*powf(dcm, 2) - 0.557561f*dcm +0.499439f;
-
-		//x->x_phase_mod = 1.27421f*powf(dcm, 2) - 0.339712f*dcm +0.504721f;
-
-		//x->x_phase_mod = 2.497f * powf(dcm, 4) +.818551f*powf(dcm, 3) +.856746f*powf(dcm, 2) - .457266f*dcm +.501846f;
-		/*x->x_phase_mod = .501846f;
-		dc = in;
-		x->x_phase_mod += -.457266f * in;
-		in *= in;
-		x->x_phase_mod += .856746f*in;
-		in *= in;
-		x->x_phase_mod += .818551f*in;
-		in *= in;
-		x->x_phase_mod += 2.497f*in;*/
-		
+		if(dc > 0.5f) {
+			x->x_phase_mod=dc;
+			dc = 1.0f - dc;
+		} else {
+				x->x_phase_mod=0.0f;
+		}
+		dc =  0.58179f * powf(dc, 4.0f) + 0.398957f * powf(dc, 3.0f) + 0.0988725f * powf(dc, 2.0f) + 0.281866f * dc + 0.248177f;
+		//post("dc %f phase mod %f", dc, x->x_phase_mod);
+	
+		x->dc=dc *2.0f;
 	}
-	x->dc=dc;
 }
 
 static inline t_float bandlimited_sin(t_float in) {
@@ -211,6 +196,7 @@ static t_float bandlimited_square(void *o, int max_harmonics, t_float p) {
 	return  4.0f *  sum / BANDLIMITED_PI;
 }
 
+
 static t_float bandlimited_pulse(void *o, int max_harmonics, t_float p) {
 	t_bandlimited *x = (t_bandlimited *)o;
 	int i;
@@ -219,11 +205,13 @@ static t_float bandlimited_pulse(void *o, int max_harmonics, t_float p) {
 	
 	for(i = 1; i <= max_harmonics; i += 2) {
 		
-		sum += bandlimited_sin(p * i * x->dc)/i;
+		sum += bandlimited_sin( p * i * x->dc)/i;
 	}
 	
 	return  (4.0f *  sum / BANDLIMITED_PI) * (x->x_phase_mod == 0 ? 1 : -1);
 }
+
+
 
 
 static t_float bandlimited_triangle(void *o, int max_harmonics, t_float p) {
@@ -384,6 +372,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	}
 	
     x = (t_bandlimited *)pd_new(bandlimited_class);
+	x->dcset=-1;
 	x->cutoff=cutoff;
     x->x_f = f;
 	x->s_nq=0;

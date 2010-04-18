@@ -101,6 +101,8 @@ typedef struct _bandlimited
 		float x_conv;
 		float x_f;      /* scalar frequency */
 		
+		double x_phase_mod;
+		
 		//bandlimited
 		float s_nq;
 		float cutoff;
@@ -111,27 +113,49 @@ typedef struct _bandlimited
 
 		
 		//type
-		t_float (*generator)(int, t_float, t_float);
-		t_float (*dutycycle)(t_float);
+		t_float (*generator)(void *, int, t_float);
+		void (*dutycycle)(void *, t_float);
+		t_float dc;
 
 		
 	} t_bandlimited;
 
 
-static t_float bandlimite_nodutycycle(t_float in) {
-	return 1.0f;
+static void bandlimite_nodutycycle(void *o, t_float in) {
+
 }
 
-static t_float bandlimite_pulsedutycycle(t_float in) {
+static void bandlimite_pulsedutycycle(void *o, t_float in) {
+	t_bandlimited *x = (t_bandlimited *)o;
 	t_float dc;
+	int setmod;
 	dc = in;
-	if(dc < 0.0)
+	
+	setmod = dc < 0.0;
+	if(setmod) {
 		dc *= -1.0f;
+	} else {
+		x->x_phase_mod=0;
+	}
 	dc = dc - (int)(dc/1.0f);
 	dc = 1.0f - dc;
 	if(dc <= 0.0f)
 		dc=1.0f;
-	return dc;
+	setmod = setmod && x->dc != dc;
+	x->dc=dc;
+	if(setmod) {
+		x->x_phase_mod = 2.497f * powf(in, 4) +.818551f*powf(in, 3) +.856746f*powf(in, 2) - .457266f*in +.501846f;
+		/*x->x_phase_mod = .501846f;
+		dc = in;
+		x->x_phase_mod += -.457266f * in;
+		in *= in;
+		x->x_phase_mod += .856746f*in;
+		in *= in;
+		x->x_phase_mod += .818551f*in;
+		in *= in;
+		x->x_phase_mod += 2.497f*in;*/
+		
+	}
 }
 
 static inline t_float bandlimited_sin(t_float in) {
@@ -158,7 +182,7 @@ static inline t_float bandlimited_sin(t_float in) {
 	
 }
 
-static t_float bandlimited_square(int max_harmonics, t_float p, t_float dutycycle) {
+static t_float bandlimited_square(void *o, int max_harmonics, t_float p) {
 	int i;
 	t_float sum=0.0f;
 	
@@ -171,21 +195,22 @@ static t_float bandlimited_square(int max_harmonics, t_float p, t_float dutycycl
 	return  4.0f *  sum / BANDLIMITED_PI;
 }
 
-static t_float bandlimited_pulse(int max_harmonics, t_float p, t_float dutycycle) {
+static t_float bandlimited_pulse(void *o, int max_harmonics, t_float p) {
+	t_bandlimited *x = (t_bandlimited *)o;
 	int i;
 	t_float sum=0.0f;
 	
 	
 	for(i = 1; i <= max_harmonics; i += 2) {
 		
-		sum += bandlimited_sin(p * i * dutycycle)/i;
+		sum += bandlimited_sin(p * i * x->dc)/i;
 	}
 	
-	return  4.0f *  sum / BANDLIMITED_PI;
+	return  (4.0f *  sum / BANDLIMITED_PI) * (x->x_phase_mod == 0 ? 1 : -1);
 }
 
 
-static t_float bandlimited_triangle(int max_harmonics, t_float p, t_float dutycycle) {
+static t_float bandlimited_triangle(void *o, int max_harmonics, t_float p) {
 	int i;
 	t_float sum=0.0f;
 	
@@ -200,7 +225,7 @@ static t_float bandlimited_triangle(int max_harmonics, t_float p, t_float dutycy
 	return  8.0f *  sum / BANDLIMITED_PISQ;
 }
 
-static inline t_float bandlimited_sawwave(int max_harmonics, t_float p, t_float dutycycle) {
+static inline t_float bandlimited_sawwave(void *o, int max_harmonics, t_float p) {
 	int i;
 	t_float sum=0.0f;
 	
@@ -212,14 +237,14 @@ static inline t_float bandlimited_sawwave(int max_harmonics, t_float p, t_float 
 	return   sum / BANDLIMITED_PI;
 }
 
-static t_float bandlimited_saw(int max_harmonics, t_float p, t_float dutycycle) {
+static t_float bandlimited_saw(void *o, int max_harmonics, t_float p) {
 	
-	return -2.0f * bandlimited_sawwave(max_harmonics, p, dutycycle);
+	return -2.0f * bandlimited_sawwave(o, max_harmonics, p);
 
 }
 
-static t_float bandlimited_rsaw(int max_harmonics, t_float p, t_float dutycycle) {
-	return 2.0f * bandlimited_sawwave(max_harmonics, p, dutycycle);
+static t_float bandlimited_rsaw(void *o, int max_harmonics, t_float p) {
+	return 2.0f * bandlimited_sawwave(o, max_harmonics, p);
 }
 
 
@@ -268,6 +293,7 @@ static void *bandlimited_new(t_symbol *type, t_floatarg f) {
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);	
     x->x_phase = 0;
     x->x_conv = 0;	
+	x->x_phase_mod=0;
     outlet_new(&x->x_obj, gensym("signal"));
 
     return (x);
@@ -317,7 +343,7 @@ static void bandlimited_type(t_bandlimited *x, t_symbol *type)
 
 static inline t_float bandlimited_phasor(t_bandlimited *x, t_float in)
 {
-    double dphase = x->x_phase + UNITBIT32;
+    double dphase = x->x_phase + x->x_phase_mod + UNITBIT32;
     union tabfudge tf;
     int normhipart;
     float conv = x->x_conv;
@@ -334,7 +360,7 @@ static inline t_float bandlimited_phasor(t_bandlimited *x, t_float in)
         tf.tf_d = dphase;
 
     tf.tf_i[HIOFFSET] = normhipart;
-    x->x_phase = tf.tf_d - UNITBIT32;
+    x->x_phase = tf.tf_d - UNITBIT32 - x->x_phase_mod;
     return out;
 }
 
@@ -358,9 +384,9 @@ static t_int *bandlimited_perform(t_int *w)
 	
     while (n--)
     {
-
+		x->dutycycle(x, *dutycycle++);
 		p = bandlimited_phasor(x, *in++);
-		*out++ = x->generator(max_harmonics, p, x->dutycycle(*dutycycle++));
+		*out++ = x->generator(x, max_harmonics, p);
 		
 
 		

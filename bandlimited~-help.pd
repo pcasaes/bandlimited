@@ -1,25 +1,25 @@
-#N canvas 688 602 992 349 10;
+#N canvas 676 214 992 349 10;
 #X obj 246 37 mtof;
 #X floatatom 246 12 5 0 0 0 - - -;
 #X obj 320 303 dac~;
 #N canvas 0 22 450 300 (subpatch) 0;
-#X array \$0.view 1000 float 0;
-#X coords 0 1 999 -1 200 140 1;
+#X array \$0.view 575 float 0;
+#X coords 0 1 574 -1 200 140 1;
 #X restore 646 41 graph;
 #X obj 155 280 tabwrite~ \$0.view;
 #X obj 306 48 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
 #X msg 290 70 0;
 #X obj 390 54 sig~;
-#X obj 568 282 s \$0.view;
-#X msg 574 253 resize 1000;
+#X obj 625 318 s \$0.view;
+#X msg 631 289 resize 1000;
 #X obj 307 274 *~ 0.5;
 #X obj 363 232 *~;
 #X obj 370 195 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
-#X msg 653 255 resize 100;
-#X msg 666 220 resize 33;
-#X msg 751 228 resize 10;
+#X msg 710 291 resize 100;
+#X msg 723 256 resize 33;
+#X msg 808 264 resize 10;
 #X obj 89 40 /~ 6;
 #X obj 148 81 *~;
 #X obj 117 4 osc~ 2;
@@ -37,10 +37,25 @@
 #X text 434 83 <= 0 resets to nyquist;
 #X msg 427 174 max \$1;
 #X floatatom 433 150 5 0 0 0 - - -;
-#X msg 730 259 resize 10000;
 #X msg 125 202 type pulse;
 #X obj 536 112 osc~ 0.1;
 #X obj 537 134 /~ 2.5;
+#X obj 339 38 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
+-1;
+#X obj 191 306 tabwrite~ \$0.view;
+#X obj 249 230 *~ -1;
+#X msg 787 295 resize 575;
+#X text 410 222 1/4 => 2/3 \, 1/3 => 3/4;
+#X text 411 238 1/8 => 4/7 \, 3/7 => 7/8?;
+#X text 409 254 1/5 = > 5/8 \, 3/8 => 4/5;
+#X text 407 273 2/5 => 5/6 \, 1/6 => 3/5;
+#X text 411 290 1/10 => 5/9 \, 4/9=>9/10;
+#X obj 513 166 sig~ 0.444444;
+#X msg 330 76 0.684923;
+#X floatatom 617 173 5 0 0 0 - - -;
+#X msg 589 236 set \$1;
+#X obj 588 207 expr 2.497*pow($f1 \, 4) -.818551*pow($f1 \, 3) +.856746
+* pow ($f1 \, 2) + 0.457266 * $f1 + 0.501846;
 #X connect 0 0 20 0;
 #X connect 1 0 0 0;
 #X connect 5 0 4 0;
@@ -61,6 +76,7 @@
 #X connect 20 0 7 0;
 #X connect 22 0 4 0;
 #X connect 22 0 11 0;
+#X connect 22 0 38 0;
 #X connect 23 0 1 0;
 #X connect 24 0 22 0;
 #X connect 25 0 22 0;
@@ -70,7 +86,15 @@
 #X connect 29 0 28 0;
 #X connect 31 0 22 0;
 #X connect 32 0 31 0;
-#X connect 33 0 8 0;
-#X connect 34 0 22 0;
-#X connect 35 0 36 0;
-#X connect 36 0 22 2;
+#X connect 33 0 22 0;
+#X connect 34 0 35 0;
+#X connect 35 0 22 2;
+#X connect 36 0 46 0;
+#X connect 36 0 37 0;
+#X connect 38 0 37 0;
+#X connect 39 0 8 0;
+#X connect 46 0 22 1;
+#X connect 47 0 45 0;
+#X connect 47 0 49 0;
+#X connect 48 0 46 0;
+#X connect 49 0 48 0;

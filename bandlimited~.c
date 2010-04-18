@@ -129,7 +129,8 @@ static void bandlimite_pulsedutycycle(void *o, t_float in) {
 	t_bandlimited *x = (t_bandlimited *)o;
 	t_float dc;
 	int setmod;
-	dc = in;
+	dc = in; ///2.0f;
+	t_float dcm;
 	
 	setmod = dc < 0.0;
 	if(setmod) {
@@ -137,14 +138,25 @@ static void bandlimite_pulsedutycycle(void *o, t_float in) {
 	} else {
 		x->x_phase_mod=0;
 	}
-	dc = dc - (int)(dc/1.0f);
+	dc = dc - (int)(dc);
+	dc /= 2.0f;
+	dcm = dc * -1;
 	dc = 1.0f - dc;
 	if(dc <= 0.0f)
 		dc=1.0f;
 	setmod = setmod && x->dc != dc;
 	x->dc=dc;
 	if(setmod) {
-		x->x_phase_mod = 2.497f * powf(in, 4) +.818551f*powf(in, 3) +.856746f*powf(in, 2) - .457266f*in +.501846f;
+		//in /= 2.0f;
+		//try still
+		//x->x_phase_mod = 2.55883f*pow(dcm, 4) +0.696396f*pow(dcm,3)+0.737736f*powf(dcm, 2) - 0.485341f*dcm +0.50001f;
+	
+		
+		x->x_phase_mod = -1.83892f*pow(dcm,3)-0.0356073f*powf(dcm, 2) - 0.557561f*dcm +0.499439f;
+
+		//x->x_phase_mod = 1.27421f*powf(dcm, 2) - 0.339712f*dcm +0.504721f;
+
+		//x->x_phase_mod = 2.497f * powf(dcm, 4) +.818551f*powf(dcm, 3) +.856746f*powf(dcm, 2) - .457266f*dcm +.501846f;
 		/*x->x_phase_mod = .501846f;
 		dc = in;
 		x->x_phase_mod += -.457266f * in;

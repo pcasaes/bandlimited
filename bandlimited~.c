@@ -118,16 +118,17 @@ typedef struct _bandlimited
 		t_float (*generator)(void *, int, t_float);
 		void (*dutycycle)(void *, t_float);
 		t_float dc;
+		int initialdc;
 
 		
 	} t_bandlimited;
 
 
-static void bandlimite_nodutycycle(void *o, t_float in) {
+static void bandlimited_nodutycycle(void *o, t_float in) {
 
 }
 
-static void bandlimite_pulsedutycycle(void *o, t_float in) {
+static void bandlimited_pulsedutycycle(void *o, t_float in) {
 	t_bandlimited *x = (t_bandlimited *)o;
 	t_float dc;
 	int setmod;
@@ -146,9 +147,7 @@ static void bandlimite_pulsedutycycle(void *o, t_float in) {
 	dc = 1.0f - dc;
 	if(dc <= 0.0f)
 		dc=1.0f;
-	setmod = setmod && x->dc != dc;
-	x->dc=dc;
-	if(setmod) {
+	if(setmod && (x->dc != dc || x->x_phase_mod == 0.0f)) {
 		//in /= 2.0f;
 		//try still
 		//x->x_phase_mod = 2.55883f*pow(dcm, 4) +0.696396f*pow(dcm,3)+0.737736f*powf(dcm, 2) - 0.485341f*dcm +0.50001f;
@@ -170,6 +169,7 @@ static void bandlimite_pulsedutycycle(void *o, t_float in) {
 		x->x_phase_mod += 2.497f*in;*/
 		
 	}
+	x->dc=dc;
 }
 
 static inline t_float bandlimited_sin(t_float in) {
@@ -266,26 +266,26 @@ static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 	if(strcmp(GETSTRING(type), "saw") == 0) {
 		x->x_phase_mod=0;
 		x->generator=  &bandlimited_saw;
-		x->dutycycle= &bandlimite_nodutycycle;
+		x->dutycycle= &bandlimited_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
 		x->x_phase_mod=0;
 		x->generator=  &bandlimited_rsaw;
-		x->dutycycle= &bandlimite_nodutycycle;
+		x->dutycycle= &bandlimited_nodutycycle;
 		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "square") == 0) {
 		x->x_phase_mod=0;
 		x->generator=  &bandlimited_square;
-		x->dutycycle= &bandlimite_nodutycycle;
+		x->dutycycle= &bandlimited_nodutycycle;
 		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
 		x->x_phase_mod=0;
 		x->generator=  &bandlimited_triangle;
-		x->dutycycle= &bandlimite_nodutycycle;
+		x->dutycycle= &bandlimited_nodutycycle;
 		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "pulse") == 0) {
 		x->generator=  &bandlimited_pulse;
-		x->dutycycle= &bandlimite_pulsedutycycle;
+		x->dutycycle= &bandlimited_pulsedutycycle;
 		x->max_harmonics_mod=2;
 	} else {
 		goto type_unknown;
@@ -303,6 +303,8 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	t_symbol *type;
 	t_float  max_harmonics;
 	t_float	cutoff;
+	t_float dc;
+	int initialdc;
 
 	if(argc == 0) {
 		error("bandlimited~: missing first argument: type (saw, rsaw, square, triangle, pulse)");
@@ -341,21 +343,43 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 		cutoff = atom_getfloat(&argv[3]);
 	} else {
 		cutoff=0;
-	}	
+	}
+	if(argc > 4) {
+		if(!ISFLOAT(argv[4])) {
+			error("bandlimited~: fourth argument must be a float: initial duty cycle");
+			goto new_error;
+		}
+		dc = atom_getfloat(&argv[4]);
+		initialdc=1;
+	} else {
+		dc=0;
+		initialdc=0;
+	}
+	
     x = (t_bandlimited *)pd_new(bandlimited_class);
 	x->cutoff=cutoff;
     x->x_f = f;
 	x->s_nq=0;
 	x->max_harmonics=max_harmonics;
+	x->initialdc=initialdc;
 	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
 	}
-	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
-	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);	
     x->x_phase = 0;
     x->x_conv = 0;	
-	x->x_phase_mod=0;
+
+	
+	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
+	if(x->initialdc) {
+		bandlimited_pulsedutycycle(x, dc);
+		inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("dutycycle"));	
+	} else {
+		x->x_phase_mod=0;
+		inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);	
+	}
+	
+
     outlet_new(&x->x_obj, gensym("signal"));
 
     return (x);
@@ -377,6 +401,12 @@ static void bandlimited_cutoff(t_bandlimited *x, t_float f)
 		x->cutoff = x->s_nq-1;
 	else 
 	x->cutoff = f;
+}
+
+
+static void bandlimited_dutycycle(t_bandlimited *x, t_float f)
+{
+	bandlimited_pulsedutycycle(x, f);
 }
 
 static void bandlimited_max(t_bandlimited *x, t_float f)
@@ -431,9 +461,28 @@ static inline t_float bandlimited_phasor(t_bandlimited *x, t_float in)
 
 
 
+static t_int *bandlimited_perform(t_int *w) {
+    t_bandlimited *x = (t_bandlimited *)(w[1]);
+    t_float *in = (t_float *)(w[2]);
+    t_float *out = (t_float *)(w[3]);
+    int n = (int)(w[4]);
+	t_float p;
+	
+	
+	int max_harmonics = (int)( x->cutoff / *in);
+	if(max_harmonics > x->max_harmonics)
+		max_harmonics = x->max_harmonics;
+	
+    while (n--)
+    {
+		p = bandlimited_phasor(x, *in++);
+		*out++ = x->generator(x, max_harmonics, p);
+    }
+    return (w+5);	
+}
 
 
-static t_int *bandlimited_perform(t_int *w)
+static t_int *bandlimited_perform_dutycyclesig(t_int *w)
 {
     t_bandlimited *x = (t_bandlimited *)(w[1]);
     t_float *in = (t_float *)(w[2]);
@@ -469,11 +518,13 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 		error("bandlimited~: %f is greater than the nyquist limit %f, you are warned", x->cutoff, x->s_nq);
 	}
     
-	dsp_add(bandlimited_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
-	//dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
+	if(x->initialdc) 
+		dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
+	else
+		dsp_add(bandlimited_perform_dutycyclesig, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n);
 }
 
-static void bandlimite_dmaketable(void)
+static void bandlimited_dmaketable(void)
 {
     int i;
     float *fp, phase, phsinc = (2. * 3.14159) / COSTABSIZE;
@@ -508,8 +559,10 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
+    class_addmethod(bandlimited_class, (t_method)bandlimited_dutycycle,
+					gensym("dutycycle"), A_FLOAT, 0);		
 		
-    bandlimite_dmaketable();
+    bandlimited_dmaketable();
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
 
 

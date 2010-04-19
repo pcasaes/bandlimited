@@ -443,10 +443,10 @@ static void bandlimited_delete(t_bandlimited *x) {
 static void bandlimited_dmakewavetable(float *table, unsigned int max_harmonics, t_float (*part)(int, int, t_float))
 {
     int i;
-    t_float *fp, phase, phsinc = (1.0f) / BANDLIMITED_TABSIZE;
+    t_float *fp, phase, phsinc = (1.0f) / (BANDLIMITED_TABSIZE-1);
     union tabfudge tf;
     
-    for (i = BANDLIMITED_TABSIZE + 1, fp = (table), phase = 0; i--;
+    for (i = BANDLIMITED_TABSIZE , fp = (table+1), phase = 0; i--;
 		 fp++, phase += phsinc)
 		*fp = part(1,max_harmonics, phase);
 	
@@ -456,6 +456,12 @@ static void bandlimited_dmakewavetable(float *table, unsigned int max_harmonics,
     tf.tf_d = UNITBIT32 + 0.5;
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
+	
+
+		table[0] = table[BANDLIMITED_TABSIZE]; 
+		table[BANDLIMITED_TABSIZE+1]  = table[1];
+		table[BANDLIMITED_TABSIZE+2]  = table[2];
+
 }
 
 static inline int t_bandlimitedypeset(t_bandlimited *x, t_symbol *type) {
@@ -496,16 +502,16 @@ static void bandlimited_dmakealltables(void) {
    	bandlimited_sawtriangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    		    
    	for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
-   		bandlimited_sawwave_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
+   		bandlimited_sawwave_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_sawwave_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_sawwavepart);
 		
-   		bandlimited_triangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
+   		bandlimited_triangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_triangle_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_trianglepart);
 		
-   		bandlimited_square_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
+   		bandlimited_square_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_square_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_squarepart);
 		
-   		bandlimited_sawtriangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
+   		bandlimited_sawtriangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_sawtriangle_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_sawtrianglepart);
    	}	    
    		    

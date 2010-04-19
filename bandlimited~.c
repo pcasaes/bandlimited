@@ -483,14 +483,15 @@ static t_int *bandlimited_perform(t_int *w) {
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
 	t_float p;
-	
-	
-	int max_harmonics = (int)( x->cutoff / *in);
-	if(max_harmonics > x->max_harmonics)
-		max_harmonics = x->max_harmonics;
-	
+	int max_harmonics;
+
     while (n--)
     {
+		
+		max_harmonics = (int)( x->cutoff / *in);
+		if(max_harmonics > x->max_harmonics)
+			max_harmonics = x->max_harmonics;
+	
 		p = bandlimited_phasor(x, *in++);
 		*out++ = x->generator(x, max_harmonics, p);
     }
@@ -506,14 +507,16 @@ static t_int *bandlimited_perform_dutycyclesig(t_int *w)
     t_float *out = (t_float *)(w[4]);
     int n = (int)(w[5]);
 	t_float p;
+	int max_harmonics;
 
 
-	int max_harmonics = (int)( x->cutoff / *in);
-	if(max_harmonics > x->max_harmonics)
-		max_harmonics = x->max_harmonics;
 	
     while (n--)
     {
+		max_harmonics = (int)( x->cutoff / *in);
+		if(max_harmonics > x->max_harmonics)
+			max_harmonics = x->max_harmonics;
+
 		x->dutycycle(x, *dutycycle++);
 		p = bandlimited_phasor(x, *in++);
 		*out++ = x->generator(x, max_harmonics, p);

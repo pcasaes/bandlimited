@@ -81,6 +81,7 @@ period.;
 #X text 198 294 the third inlet takes the pulse wave's duty cycle (0
 - 1) \, 0.5 generates a square wave.;
 #X obj 468 335 bl.vpulse~ 0 1;
+#X obj 468 355 bl.sawtri~ 0 1;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;
 #X connect 2 0 1 1;

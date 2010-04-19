@@ -55,6 +55,7 @@ wave;
 #X obj 210 149 *~ 0.45;
 #X obj 210 169 +~ 0.5;
 #X text 270 140 oscilates between 0.5 and 0.95;
+#X obj 467 355 bl.sawtri~ 0 1;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;
 #X connect 2 0 1 1;

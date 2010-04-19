@@ -41,6 +41,7 @@ mailto:irmaosaturno@gmail.com
 #endif
 
 #define BANDLIMITED_TABSIZE 2048
+#define BANDLIMITED_FINVNPOINTS 0.00048828125   // 1.0 / BANDLIMITED_TABSIZE
 
 #define GETSTRING(s) (s)->s_name
 #define ISFLOAT(a) (a.a_type==A_FLOAT)
@@ -91,7 +92,7 @@ mailto:irmaosaturno@gmail.com
 
 #define BANDLIMITED_INCREMENT 16						//4
 #define BANDLIMITED_HAMSTART 1104					//1104
-#define BANDLIMITED_HAMSIZE 69						//276
+#define BANDLIMITED_HAMSIZE 69						//276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
 
 static long bandlimited_count=0l;
 static float *bandlimited_cos_table=0;
@@ -118,6 +119,7 @@ typedef struct _bandlimited
 		float x_f;      /* scalar frequency */
 		
 		//tabosc4
+		double osc4_phase;
 
 		
 		
@@ -167,26 +169,6 @@ static inline t_float bandlimited_sin(t_float in) {
 	return (f1 + frac * (f2 - f1));
 }
 
-static inline t_float bandlimited_part2(t_bandlimited *x, float *table, t_float in) {
-    double dphase;
-    int normhipart;
-    union tabfudge tf;
-    t_float *tab = (table), *addr, f1, f2, frac;
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-	
-
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
-	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1));
-	tf.tf_i[HIOFFSET] = normhipart;
-	frac = tf.tf_d - UNITBIT32;
-	f1 = addr[0];
-	f2 = addr[1];
-	return (f1 + frac * (f2 - f1));
-}
-
 static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float in) {
     int normhipart;
     union tabfudge tf;
@@ -196,7 +178,7 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
     int maxindex;
     float *tab = table, *addr;
     int i;
-    double dphase = fnpoints * x->x_phase + UNITBIT32;
+    double dphase = fnpoints * x->osc4_phase + UNITBIT32;
 	float frac,  a,  b,  c,  d, cminusb;
 	t_float out;
 	
@@ -228,7 +210,7 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
     normhipart = tf.tf_i[HIOFFSET];
     tf.tf_d = dphase + (UNITBIT32 * fnpoints - UNITBIT32);
     tf.tf_i[HIOFFSET] = normhipart;
-    //x->x_phase = (tf.tf_d - UNITBIT32 * fnpoints)  * x->x_finvnpoints;
+    x->osc4_phase = (tf.tf_d - UNITBIT32 * fnpoints)  * BANDLIMITED_FINVNPOINTS;
 	
 	
 	return out;
@@ -592,7 +574,8 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 		x->generator=  &bandlimited_saw;
 	}
     x->x_phase = 0;
-    x->x_conv = 0;	
+    x->x_conv = 0;
+	x->osc4_phase=0;
 
 	
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
@@ -608,7 +591,7 @@ new_error:
 
 static void bandlimited_ft1(t_bandlimited *x, t_float f)
 {
-    x->x_phase = f;
+    x->x_phase = x->osc4_phase =  f;
 }
 
 static void bandlimited_cutoff(t_bandlimited *x, t_float f)
@@ -686,6 +669,7 @@ static t_int *bandlimited_perform(t_int *w) {
     while (n--)
     {
 		
+		x->osc4_phase = x->x_phase;
 		max_harmonics = (int)( x->cutoff / *in);
 		if(max_harmonics > x->max_harmonics)
 			max_harmonics = x->max_harmonics;

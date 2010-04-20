@@ -1,32 +1,32 @@
 /**
-
-
-Copyright (C) 2010 Paulo Casaes
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
--- 
-http://http://gitorious.org/~saturno
-mailto:irmaosaturno@gmail.com
-
-
+ 
+ 
+ Copyright (C) 2010 Paulo Casaes
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ 
+ 
+ -- 
+ http://http://gitorious.org/~saturno
+ mailto:irmaosaturno@gmail.com
+ 
+ 
  
  Code was liberally borrowed from d_osc.c
-
-*/
+ 
+ */
 
 #include "m_pd.h"
 #include <math.h>
@@ -120,7 +120,7 @@ typedef struct _bandlimited
 		
 		//tabosc4
 		double osc4_phase;
-
+		
 		
 		
 		//bandlimited
@@ -130,13 +130,13 @@ typedef struct _bandlimited
 		int max_harmonics_mod;
 		int max_harmonics;
 		
-
+		
 		
 		//type
 		t_float (*generator)(void *, unsigned int, t_float, t_float);
 		
-
-
+		
+		
 		
 	} t_bandlimited;
 
@@ -150,24 +150,19 @@ static inline t_float bandlimited_sin_4point(t_float in) {
     int normhipart;
     union tabfudge tf;
     float *tab = bandlimited_sin_table, *addr, a, b, c,d,cminusb, frac;
-
+	
 	
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 	
-
+	
 	
 	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1));
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1)) + 1;
 	tf.tf_i[HIOFFSET] = normhipart;
 	frac = tf.tf_d - UNITBIT32;
-	if(addr == tab) {
-		a = addr[BANDLIMITED_TABSIZE];
-
-	} else {
-		a = addr[-1];
-	}
+	a = addr[-1];
 	b = addr[0];
 	c = addr[1];
 	d = addr[2];
@@ -175,12 +170,12 @@ static inline t_float bandlimited_sin_4point(t_float in) {
 	
 	cminusb = c-b;
 	return b + frac * (
-					  cminusb - 0.1666667f * (1.-frac) * (
-														  (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
-														  )
-					  );	
+					   cminusb - 0.1666667f * (1.-frac) * (
+														   (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
+														   )
+					   );	
 	
-
+	
 }
 
 
@@ -193,11 +188,11 @@ static inline t_float bandlimited_sin_lin(t_float in) {
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 	
-
+	
 	
 	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1));
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1))+1;
 	tf.tf_i[HIOFFSET] = normhipart;
 	frac = tf.tf_d - UNITBIT32;
 	f1 = addr[0];
@@ -218,12 +213,12 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	float frac,  a,  b,  c,  d, cminusb;
 	t_float out;
 	
-
+	
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 	
 	
-
+	
 	tf.tf_d = dphase;
 	dphase += in * conv;
 	addr = tab + (tf.tf_i[HIOFFSET] & mask);
@@ -235,10 +230,10 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	d = addr[3];
 	cminusb = c-b;
 	out = b + frac * (
-						 cminusb - 0.1666667f * (1.-frac) * (
-															 (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
-															 )
-						 );	
+					  cminusb - 0.1666667f * (1.-frac) * (
+														  (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
+														  )
+					  );	
 	
 	
 	
@@ -250,9 +245,9 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	
 	
 	return out;
-
 	
-
+	
+	
 }
 
 static t_float bandlimited_squarepart(int start, int max_harmonics, t_float p) {
@@ -270,15 +265,15 @@ static t_float bandlimited_squarepart(int start, int max_harmonics, t_float p) {
 
 
 static inline unsigned int bandlimited_harmpos(int max_harmonics) {
-
+	
 	unsigned int pos =  rint((1.0f*max_harmonics)/BANDLIMITED_INCREMENT);
 	if(pos > BANDLIMITED_HAMSIZE)
 		pos = BANDLIMITED_HAMSIZE;
 	else if(pos < 1)
 		pos=1;
-
+	
 	return pos;
-
+	
 }
 
 
@@ -290,7 +285,7 @@ static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
-
+	
 	t_float sum;
 	sum = bandlimited_part(x, bandlimited_square_table[pos-1], freq);
 	
@@ -301,7 +296,7 @@ static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p
 		sum -= bandlimited_squarepart( max_harmonics%2 == 0 ? max_harmonics+1 : max_harmonics, nearest-1, p);
 	
 	return 4.0f * sum/ BANDLIMITED_PI;
-
+	
 }
 
 
@@ -340,8 +335,8 @@ static t_float bandlimited_triangle(void *o, unsigned int max_harmonics, t_float
 		sum -= bandlimited_trianglepart( max_harmonics%2 == 0 ? max_harmonics+1 : max_harmonics, nearest-1, p);
 	
 	return 8.0f * sum/ BANDLIMITED_PISQ;	
-
-
+	
+	
 }
 
 static inline t_float bandlimited_sawwavepart(int start, int max_harmonics, t_float p) {
@@ -373,13 +368,13 @@ static inline t_float bandlimited_sawwave(void *o, unsigned int max_harmonics, t
 	
 	return  sum/ BANDLIMITED_PI;	
 	
-
+	
 }
 
 static t_float bandlimited_saw(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
 	return -2.0f * bandlimited_sawwave(o, max_harmonics,  p, freq);
 	//return -2.0f * bandlimited_sawwave(o, max_harmonics, p);
-
+	
 }
 
 static t_float bandlimited_sawtrianglepart(int start, int max_harmonics, t_float p) {
@@ -419,8 +414,8 @@ static t_float bandlimited_sawtriangle(void *o,  unsigned int max_harmonics, t_f
 		sum -= bandlimited_sawtrianglepart(max_harmonics, nearest-1, p);
 	
 	return  2.0f * sum/ BANDLIMITED_PI;	
-
-
+	
+	
 }
 
 static t_float bandlimited_rsaw(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
@@ -435,8 +430,8 @@ static void bandlimited_dmaketable(void)
     union tabfudge tf;
     
     if (bandlimited_sin_table) return;
-    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
-    for (i = BANDLIMITED_TABSIZE + 1, fp = bandlimited_sin_table, phase = 0; i--;
+    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+4));
+    for (i = BANDLIMITED_TABSIZE + 1, fp = bandlimited_sin_table+1, phase = 0; i--;
 		 fp++, phase += phsinc)
 		*fp = sin(phase);
 	
@@ -446,29 +441,33 @@ static void bandlimited_dmaketable(void)
     tf.tf_d = UNITBIT32 + 0.5;
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
+	
+	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE+1];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[1];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+3] = bandlimited_sin_table[2];
 }
 
 static void bandlimited_delete(t_bandlimited *x) {
 	int i;
-
+	
 	if(--bandlimited_count == 0l) {
 		post("bandlimited~: deleting look up tables");
-		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+1));
+		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+4));
 		bandlimited_sin_table=0;
 		
-
+		
 		for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
-			freebytes(bandlimited_sawwave_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+1));
-			freebytes(bandlimited_triangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+1));
-			freebytes(bandlimited_square_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+1));
-			freebytes(bandlimited_sawtriangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+1));
+			freebytes(bandlimited_sawwave_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_triangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_square_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_sawtriangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		}	  
 		freebytes(bandlimited_sawwave_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
 		freebytes(bandlimited_triangle_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
 		freebytes(bandlimited_square_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
 		freebytes(bandlimited_sawtriangle_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
-   		    
-  
+		
+		
 		
 	}
 }
@@ -490,11 +489,11 @@ static void bandlimited_dmakewavetable(float *table, unsigned int max_harmonics,
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
 	
-
-		table[0] = table[BANDLIMITED_TABSIZE]; 
-		table[BANDLIMITED_TABSIZE+1]  = table[1];
-		table[BANDLIMITED_TABSIZE+2]  = table[2];
-
+	
+	table[0] = table[BANDLIMITED_TABSIZE]; 
+	table[BANDLIMITED_TABSIZE+1]  = table[1];
+	table[BANDLIMITED_TABSIZE+2]  = table[2];
+	
 }
 
 static inline int t_bandlimitedypeset(t_bandlimited *x, t_symbol *type) {
@@ -515,7 +514,7 @@ static inline int t_bandlimitedypeset(t_bandlimited *x, t_symbol *type) {
 		x->max_harmonics_mod=1;
 	} else {
 		goto type_unknown;
-
+		
 	}
 	x->max_harmonics = x->max_harmonics * x->max_harmonics_mod;
 	return 0;
@@ -525,15 +524,15 @@ type_unknown:
 
 static void bandlimited_dmakealltables(void) {
 	int i;
-
+	
 	post("bandlimited~: creating look up tables");
    	bandlimited_dmaketable();
-   		    
+	
    	bandlimited_sawwave_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    	bandlimited_triangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    	bandlimited_square_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    	bandlimited_sawtriangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
-   		    
+	
    	for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
    		bandlimited_sawwave_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_sawwave_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_sawwavepart);
@@ -547,7 +546,7 @@ static void bandlimited_dmakealltables(void) {
    		bandlimited_sawtriangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_sawtriangle_table[i], (i+1) * BANDLIMITED_INCREMENT, bandlimited_sawtrianglepart);
    	}	    
-   		    
+	
 }
 
 
@@ -557,7 +556,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	t_symbol *type;
 	t_float  max_harmonics;
 	t_float	cutoff;
-
+	
 	if(argc == 0) {
 		error("bandlimited~: missing first argument: type (saw, rsaw, square, triangle, pulse)");
 		goto new_error;
@@ -600,8 +599,8 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
     x = (t_bandlimited *)pd_new(bandlimited_class);
     
     if(bandlimited_count++ == 0l) {
-   		    bandlimited_dmakealltables();
-
+		bandlimited_dmakealltables();
+		
     }
     
 	x->cutoff=cutoff;
@@ -615,13 +614,13 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
     x->x_phase = 0;
     x->x_conv = 0;
 	x->osc4_phase=0;
-
+	
 	
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
 	
-
+	
     outlet_new(&x->x_obj, gensym("signal"));
-
+	
     return (x);
 	
 new_error:
@@ -640,7 +639,7 @@ static void bandlimited_cutoff(t_bandlimited *x, t_float f)
 	else if(f < 1 )
 		x->cutoff = x->s_nq-1;
 	else 
-	x->cutoff = f;
+		x->cutoff = f;
 }
 
 
@@ -687,12 +686,12 @@ static inline t_float bandlimited_phasor(t_bandlimited *x, t_float in)
     normhipart = tf.tf_i[HIOFFSET];
     tf.tf_d = dphase;
 	
-
-        tf.tf_i[HIOFFSET] = normhipart;
-        dphase += in * conv;
-        out = tf.tf_d - UNITBIT32;
-        tf.tf_d = dphase;
-
+	
+	tf.tf_i[HIOFFSET] = normhipart;
+	dphase += in * conv;
+	out = tf.tf_d - UNITBIT32;
+	tf.tf_d = dphase;
+	
     tf.tf_i[HIOFFSET] = normhipart;
     x->x_phase = tf.tf_d - UNITBIT32;
     return out;
@@ -707,7 +706,7 @@ static t_int *bandlimited_perform(t_int *w) {
     int n = (int)(w[4]);
 	t_float p;
 	int max_harmonics;
-
+	
     while (n--)
     {
 		
@@ -715,7 +714,7 @@ static t_int *bandlimited_perform(t_int *w) {
 		max_harmonics = (int)( x->cutoff / *in);
 		if(max_harmonics > x->max_harmonics)
 			max_harmonics = x->max_harmonics;
-	
+		
 		p = bandlimited_phasor(x, *in);
 		*out++ =  x->generator(x, max_harmonics, p, *in++);
     }
@@ -743,7 +742,7 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 extern void bandlimited_tilde_setup(void)
 {
     bandlimited_class = class_new(gensym("bandlimited~"), (t_newmethod)bandlimited_new, (t_method) bandlimited_delete,
-						  sizeof(t_bandlimited), 0, A_GIMME, 0); //A_DEFSYMBOL, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT
+								  sizeof(t_bandlimited), 0, A_GIMME, 0); //A_DEFSYMBOL, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT
     CLASS_MAINSIGNALIN(bandlimited_class, t_bandlimited, x_f);
     class_addmethod(bandlimited_class, (t_method)bandlimited_dsp, gensym("dsp"), 0);
     class_addmethod(bandlimited_class, (t_method)bandlimited_ft1,
@@ -754,12 +753,12 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
-
+	
     class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
 					gensym("testsine"), A_FLOAT, 0);		
 	
 	
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
-
-
+	
+	
 }

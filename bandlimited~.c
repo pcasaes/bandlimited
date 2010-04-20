@@ -157,9 +157,9 @@ static inline t_float bandlimited_sin_4point(t_float in) {
 	
 	
 	
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE-1)) + UNITBIT32;
+	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-2));
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1)) + 1;
 	tf.tf_i[HIOFFSET] = normhipart;
 	frac = tf.tf_d - UNITBIT32;
 	a = addr[-1];
@@ -190,9 +190,9 @@ static inline t_float bandlimited_sin_lin(t_float in) {
 	
 	
 	
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE-1)) + UNITBIT32;
+	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-2));
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1))+1;
 	tf.tf_i[HIOFFSET] = normhipart;
 	frac = tf.tf_d - UNITBIT32;
 	f1 = addr[0];
@@ -426,12 +426,12 @@ static t_float bandlimited_rsaw(void *o, unsigned int max_harmonics, t_float p, 
 static void bandlimited_dmaketable(void)
 {
     int i;
-    float *fp, phase, phsinc = (2. * 3.14159) / (BANDLIMITED_TABSIZE-1);
+    float *fp, phase, phsinc = (2. * 3.14159) / BANDLIMITED_TABSIZE;
     union tabfudge tf;
     
     if (bandlimited_sin_table) return;
-    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
-    for (i = BANDLIMITED_TABSIZE , fp = bandlimited_sin_table+1, phase = 0; i--;
+    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+4));
+    for (i = BANDLIMITED_TABSIZE + 1, fp = bandlimited_sin_table+1, phase = 0; i--;
 		 fp++, phase += phsinc)
 		*fp = sin(phase);
 	
@@ -442,9 +442,9 @@ static void bandlimited_dmaketable(void)
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
 	
-	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE+];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+1] = bandlimited_sin_table[1];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[2];
+	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE+1];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[1];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+3] = bandlimited_sin_table[2];
 }
 
 static void bandlimited_delete(t_bandlimited *x) {
@@ -452,7 +452,7 @@ static void bandlimited_delete(t_bandlimited *x) {
 	
 	if(--bandlimited_count == 0l) {
 		post("bandlimited~: deleting look up tables");
-		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+3));
+		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+4));
 		bandlimited_sin_table=0;
 		
 		

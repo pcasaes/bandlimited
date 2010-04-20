@@ -426,7 +426,7 @@ static t_float bandlimited_rsaw(void *o, unsigned int max_harmonics, t_float p, 
 static void bandlimited_dmaketable(void)
 {
     int i;
-    float *fp, phase, phsinc = (2. * 3.14159) / BANDLIMITED_TABSIZE;
+    float *fp, phase, phsinc = (2.0f * BANDLIMITED_PI) / BANDLIMITED_TABSIZE;
     union tabfudge tf;
     
     if (bandlimited_sin_table) return;
@@ -658,7 +658,9 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 }
 
 static void bandlimited_testsine(t_bandlimited *x, t_float f) {
-	post("bandlimited~: linear sin(2pi %f) = %f, 4point sin(2pi %f) = %f", f, bandlimited_sin_lin(f), f, bandlimited_sin(f));
+	post("bandlimited~: linear sin(2pi %f) = %f", f, bandlimited_sin_lin(f));
+	post("bandlimited~: 4point sin(2pi %f) = %f", f, bandlimited_sin(f));
+	post("bandlimited~:   real sin(2pi %f) = %f",  f, sin(2.0*BANDLIMITED_PI*f));
 }
 
 

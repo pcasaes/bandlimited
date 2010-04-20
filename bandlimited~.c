@@ -277,31 +277,22 @@ static inline unsigned int bandlimited_harmpos(int max_harmonics) {
 	else if(pos < 1)
 		pos=1;
 
-	return pos-1;
-
-}
-
-static inline unsigned int bandlimited_nearestharmonic(int max_harmonics) {
-	
-	unsigned int pos =  rint((1.0f*max_harmonics)/BANDLIMITED_INCREMENT) * BANDLIMITED_INCREMENT;
-	if(pos > BANDLIMITED_HAMSTART)
-		pos = BANDLIMITED_HAMSTART;
-	else if(pos < BANDLIMITED_INCREMENT)
-		pos=BANDLIMITED_INCREMENT;
-	
 	return pos;
-	
+
 }
+
+
 
 static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
 	t_bandlimited *x = o;
 	//if(1)
-	//	return 4.0f *bandlimited_squarepart(1, max_harmonics, p)/BANDLIMITED_PI; 
+	//	return 4.0f *bandlimited_squarepart(1, max_harmonics, p)/BANDLIMITED_PI;
+	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
-	unsigned int nearest = bandlimited_nearestharmonic(max_harmonics);
+	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 
 	t_float sum;
-	sum = bandlimited_part(x, bandlimited_square_table[bandlimited_harmpos(max_harmonics)], freq);
+	sum = bandlimited_part(x, bandlimited_square_table[pos-1], freq);
 	
 	
 	if(max_harmonics > nearest)
@@ -335,10 +326,12 @@ static t_float bandlimited_trianglepart(int start, int max_harmonics, t_float p)
 static t_float bandlimited_triangle(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
 	t_bandlimited *x = o;
 	
-	unsigned int nearest = bandlimited_nearestharmonic(max_harmonics);
+	unsigned int pos = bandlimited_harmpos(max_harmonics);
+	
+	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(x, bandlimited_triangle_table[bandlimited_harmpos(max_harmonics)], freq);
+	sum = bandlimited_part(x, bandlimited_triangle_table[pos-1], freq);
 	
 	
 	if(max_harmonics > nearest)
@@ -365,11 +358,12 @@ static inline t_float bandlimited_sawwavepart(int start, int max_harmonics, t_fl
 
 static inline t_float bandlimited_sawwave(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
 	t_bandlimited *x = o;
+	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
-	unsigned int nearest = bandlimited_nearestharmonic(max_harmonics);
+	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(x, bandlimited_sawwave_table[bandlimited_harmpos(max_harmonics)], freq);
+	sum = bandlimited_part(x, bandlimited_sawwave_table[pos-1], freq);
 	
 	
 	if(max_harmonics > nearest)
@@ -411,10 +405,12 @@ static t_float bandlimited_sawtrianglepart(int start, int max_harmonics, t_float
 static t_float bandlimited_sawtriangle(void *o,  unsigned int max_harmonics, t_float p, t_float freq) {
 	t_bandlimited *x = o;
 	
-	unsigned int nearest = bandlimited_nearestharmonic(max_harmonics);
+	unsigned int pos = bandlimited_harmpos(max_harmonics);
+	
+	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(x, bandlimited_sawtriangle_table[bandlimited_harmpos(max_harmonics)], freq);
+	sum = bandlimited_part(x, bandlimited_sawtriangle_table[pos-1], freq);
 	
 	
 	if(max_harmonics > nearest)

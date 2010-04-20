@@ -1,4 +1,4 @@
-#N canvas 452 391 1030 565 10;
+#N canvas 650 384 1030 565 10;
 #X obj 248 132 mtof;
 #X floatatom 237 109 5 0 0 0 - - -;
 #X obj 333 388 dac~;
@@ -43,7 +43,7 @@
 #N canvas 0 22 542 489 fader 0;
 #X obj 97 310 dbtorms;
 #X obj 100 102 vsl 30 64 101 1 1 0 empty empty empty 0 -9 0 10 -203904
--1 -1 0 1;
+-1 -1 3200 1;
 #X obj 93 238 - 1;
 #X msg 93 260 100 \$1;
 #X obj 94 282 -;
@@ -60,6 +60,22 @@
 #X coords 0 -1 1 1 30 70 2 100 100;
 #X restore 432 304 pd fader;
 #X obj 320 359 *~;
+#X obj 596 341 tabread \$0.view;
+#X obj 600 392;
+#X floatatom 598 363 9 0 0 0 - - -;
+#X floatatom 598 314 5 0 0 0 - - -;
+#X msg 637 315 0;
+#X obj 458 427 sin~;
+#X obj 446 460 tabwrite~ \$0.view;
+#X obj 509 434 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
+#X obj 500 368 cos~ 0;
+#X obj 490 400 -~;
+#X obj 438 389 sig~ 1;
+#X obj 500 338 sig~ 0;
+#X msg 745 374 testsine \$1;
+#X obj 746 397 s \$0.set;
+#X floatatom 744 353 5 0 0 0 - - -;
 #X connect 0 0 8 0;
 #X connect 1 0 0 0;
 #X connect 5 0 4 0;
@@ -88,3 +104,14 @@
 #X connect 37 0 38 1;
 #X connect 38 0 2 0;
 #X connect 38 0 2 1;
+#X connect 39 0 41 0;
+#X connect 42 0 39 0;
+#X connect 43 0 39 0;
+#X connect 44 0 45 0;
+#X connect 46 0 45 0;
+#X connect 47 0 48 1;
+#X connect 48 0 44 0;
+#X connect 49 0 48 0;
+#X connect 50 0 47 0;
+#X connect 51 0 52 0;
+#X connect 53 0 51 0;

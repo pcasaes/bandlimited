@@ -95,7 +95,7 @@ mailto:irmaosaturno@gmail.com
 #define BANDLIMITED_HAMSIZE 69						//276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
 
 static long bandlimited_count=0l;
-static float *bandlimited_cos_table=0;
+static float *bandlimited_sin_table=0;
 static float **bandlimited_triangle_table=0;
 static float **bandlimited_sawwave_table=0;
 static float **bandlimited_sawtriangle_table=0;
@@ -142,22 +142,58 @@ typedef struct _bandlimited
 
 
 
+#define bandlimited_sin(freq) bandlimited_sin_4point(freq)
 
 
-
-
-
-
-static inline t_float bandlimited_sin(t_float in) {
+static inline t_float bandlimited_sin_4point(t_float in) {
     double dphase;
     int normhipart;
     union tabfudge tf;
-    float *tab = bandlimited_cos_table, *addr, f1, f2, frac;
+    float *tab = bandlimited_sin_table, *addr, a, b, c,d,cminusb, frac;
+
 	
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 	
-	in = 0.25f - in;
+
+	
+	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
+	tf.tf_d = dphase;
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1));
+	tf.tf_i[HIOFFSET] = normhipart;
+	frac = tf.tf_d - UNITBIT32;
+	if(addr == tab) {
+		a = addr[BANDLIMITED_TABSIZE];
+
+	} else {
+		a = addr[-1];
+	}
+	b = addr[0];
+	c = addr[1];
+	d = addr[2];
+	
+	
+	cminusb = c-b;
+	return b + frac * (
+					  cminusb - 0.1666667f * (1.-frac) * (
+														  (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
+														  )
+					  );	
+	
+
+}
+
+
+static inline t_float bandlimited_sin_lin(t_float in) {
+    double dphase;
+    int normhipart;
+    union tabfudge tf;
+    float *tab = bandlimited_sin_table, *addr, f1, f2, frac;
+	
+    tf.tf_d = UNITBIT32;
+    normhipart = tf.tf_i[HIOFFSET];
+	
+
 	
 	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
@@ -182,7 +218,7 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	float frac,  a,  b,  c,  d, cminusb;
 	t_float out;
 	
-    if (!tab) goto zero;
+
     tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
 	
@@ -214,8 +250,7 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	
 	
 	return out;
-zero:
-	return 0;
+
 	
 
 }
@@ -260,7 +295,9 @@ static inline unsigned int bandlimited_nearestharmonic(int max_harmonics) {
 
 static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p, t_float freq) {
 	t_bandlimited *x = o;
-
+	//if(1)
+	//	return 4.0f *bandlimited_squarepart(1, max_harmonics, p)/BANDLIMITED_PI; 
+	
 	unsigned int nearest = bandlimited_nearestharmonic(max_harmonics);
 
 	t_float sum;
@@ -401,11 +438,11 @@ static void bandlimited_dmaketable(void)
     float *fp, phase, phsinc = (2. * 3.14159) / BANDLIMITED_TABSIZE;
     union tabfudge tf;
     
-    if (bandlimited_cos_table) return;
-    bandlimited_cos_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
-    for (i = BANDLIMITED_TABSIZE + 1, fp = bandlimited_cos_table, phase = 0; i--;
+    if (bandlimited_sin_table) return;
+    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+1));
+    for (i = BANDLIMITED_TABSIZE + 1, fp = bandlimited_sin_table, phase = 0; i--;
 		 fp++, phase += phsinc)
-		*fp = cos(phase);
+		*fp = sin(phase);
 	
 	/* here we check at startup whether the byte alignment
 	 is as we declared it.  If not, the code has to be
@@ -420,8 +457,8 @@ static void bandlimited_delete(t_bandlimited *x) {
 
 	if(--bandlimited_count == 0l) {
 		post("bandlimited~: deleting look up tables");
-		freebytes(bandlimited_cos_table, sizeof(float) * (BANDLIMITED_TABSIZE+1));
-		bandlimited_cos_table=0;
+		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+1));
+		bandlimited_sin_table=0;
 		
 
 		for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
@@ -625,6 +662,9 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 	
 }
 
+static void bandlimited_testsine(t_bandlimited *x, t_float f) {
+	post("bandlimited~: linear sin(2pi %f) = %f, 4point sin(2pi %f) = %f", f, bandlimited_sin_lin(f), f, bandlimited_sin(f));
+}
 
 
 
@@ -718,7 +758,11 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
-		
+
+    class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
+					gensym("testsine"), A_FLOAT, 0);		
+	
+	
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);
 
 

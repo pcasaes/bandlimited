@@ -24,7 +24,7 @@
  
  
  
- Code was liberally borrowed from d_osc.c
+ Code was liberally borrowed from d_osc.c and d_array.c
  
  */
 
@@ -146,71 +146,14 @@ typedef struct _bandlimited
 		
 	} t_bandlimited;
 
-
-
-static double (*bandlimited_sin)(t_float);
-
-static double bandlimited_sin_real(t_float in) {
-	return sin((2.0 * BANDLIMITED_PI)*in);
-}
-
-static double bandlimited_sin_4point(t_float in) {
-    double dphase;
-    int normhipart;
-    union tabfudge tf;
-    float *tab = bandlimited_sin_table, *addr, a, b, c,d,cminusb, frac;
-	
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-	
-	
-	
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
-	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1)) + 1;
-	tf.tf_i[HIOFFSET] = normhipart;
-	frac = tf.tf_d - UNITBIT32;
-	a = addr[-1];
-	b = addr[0];
-	c = addr[1];
-	d = addr[2];
-	
-	
-	cminusb = c-b;
-	return b + frac * (
-					   cminusb - 0.1666667f * (1.-frac) * (
-														   (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
-														   )
-					   );	
-	
-	
-}
-
-#ifdef DEBUG
-static double bandlimited_sin_lin(t_float in) {
-    double dphase;
-    int normhipart;
-    union tabfudge tf;
-    float *tab = bandlimited_sin_table, *addr, f1, f2, frac;
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-	
-	
-	
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
-	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1))+1;
-	tf.tf_i[HIOFFSET] = normhipart;
-	frac = tf.tf_d - UNITBIT32;
-	f1 = addr[0];
-	f2 = addr[1];
-	return (f1 + frac * (f2 - f1));
-}
-#endif
-
-static inline t_float bandlimited_part(float *table, t_float in) {
+/*
+ * This function performs a 4 point interpolation lookup on the table.
+ * code borrowed from tabread4~
+ *
+ * param float *  pointer to wavetable
+ * param t_float phase to lookup
+ */
+static inline t_float bandlimited_read4(float *table, t_float p) {
 	
     double dphase;
     int normhipart;
@@ -223,7 +166,7 @@ static inline t_float bandlimited_part(float *table, t_float in) {
 	
 	
 	
-	dphase = (double)(in * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
+	dphase = (double)(p * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
 	tf.tf_d = dphase;
 	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1)) + 1;
 	tf.tf_i[HIOFFSET] = normhipart;
@@ -240,12 +183,66 @@ static inline t_float bandlimited_part(float *table, t_float in) {
 														   (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
 														   )
 					   );
-	
-	
-	
-	
-	
 }
+
+/*
+ * This variables sets the sin function being used. When building 
+ * the wave tables the real sin function should be used. When generating
+ * a signal the 4point interpolation sin wavetable function should be used.
+ *
+ * param t_float phase
+ */
+static double (*bandlimited_sin)(t_float);
+
+/*
+ * This function performs sin(2pi *x) using the real sin function.
+ *
+ * param t_float phase
+ */
+static double bandlimited_sin_real(t_float p) {
+	return sin((2.0 * BANDLIMITED_PI)*p);
+}
+
+
+/*
+ * This function performs sin(2pi * x) using 4-point interpolation on top of a wavetable.
+ *
+ * param t_float phase
+ */
+static double bandlimited_sin_4point(t_float p) {
+	return bandlimited_read4(bandlimited_sin_table, p);
+}
+
+#ifdef DEBUG
+/*
+ * This function performs sin(2pi * x) using linear interpolation on top of a wavetable.
+ * It's here for testing purposes.
+ *
+ * param t_float phase
+ */
+static double bandlimited_sin_lin(t_float p) {
+    double dphase;
+    int normhipart;
+    union tabfudge tf;
+    float *tab = bandlimited_sin_table, *addr, f1, f2, frac;
+	
+    tf.tf_d = UNITBIT32;
+    normhipart = tf.tf_i[HIOFFSET];
+	
+	
+	
+	dphase = (double)(p * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
+	tf.tf_d = dphase;
+	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1))+1;
+	tf.tf_i[HIOFFSET] = normhipart;
+	frac = tf.tf_d - UNITBIT32;
+	f1 = addr[0];
+	f2 = addr[1];
+	return (f1 + frac * (f2 - f1));
+}
+#endif
+
+
 
 static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned  int i;
@@ -282,7 +279,7 @@ static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(bandlimited_square_table[pos-1], p);
+	sum = bandlimited_read4(bandlimited_square_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -319,7 +316,7 @@ static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(bandlimited_triangle_table[pos-1], p);
+	sum = bandlimited_read4(bandlimited_triangle_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -351,7 +348,7 @@ static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p)
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	double sum;
-	sum = bandlimited_part(bandlimited_sawwave_table[pos-1], p);
+	sum = bandlimited_read4(bandlimited_sawwave_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -397,7 +394,7 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_part(bandlimited_sawtriangle_table[pos-1], p);
+	sum = bandlimited_read4(bandlimited_sawtriangle_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)

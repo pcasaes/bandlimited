@@ -707,54 +707,46 @@ static void t_bandlimitedype(t_bandlimited *x, t_symbol *type)
 
 
 
-
-static inline t_float bandlimited_phasor(t_bandlimited *x, t_float in)
-{
-    double dphase = x->x_phase + UNITBIT32;
-    union tabfudge tf;
-    int normhipart;
-    float conv = x->x_conv;
-	t_float out;
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-    tf.tf_d = dphase;
-	
-	
-	tf.tf_i[HIOFFSET] = normhipart;
-	dphase += in * conv;
-	out = tf.tf_d - UNITBIT32;
-	tf.tf_d = dphase;
-	
-    tf.tf_i[HIOFFSET] = normhipart;
-    x->x_phase = tf.tf_d - UNITBIT32;
-    return out;
-}
-
-
-
 static t_int *bandlimited_perform(t_int *w) {
     t_bandlimited *x = (t_bandlimited *)(w[1]);
     t_float *in = (t_float *)(w[2]);
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
 	t_float p;
+    double dphase = x->x_phase + UNITBIT32;
+    union tabfudge tf;
+    int normhipart;
+    float conv = x->x_conv;
 	unsigned int max_harmonics;
+
+	tf.tf_d = UNITBIT32;
+    normhipart = tf.tf_i[HIOFFSET];
+    tf.tf_d = dphase;
 	
     while (n--)
     {
+		
 		if(*in > 0.0) {
-			max_harmonics = (int)( x->cutoff / *in);
+			tf.tf_i[HIOFFSET] = normhipart;
+			dphase += *in * conv;
+			p = tf.tf_d - UNITBIT32;
+			tf.tf_d = dphase;
+			
+			max_harmonics = (int)( x->cutoff / *in++);
 			if(max_harmonics > x->max_harmonics)
 				max_harmonics = x->max_harmonics;
 		
-			p = bandlimited_phasor(x, *in++);
+
 			*out++ =  x->generator(max_harmonics, p);
 		} else {
 			*out++ = 0.0f;
 			in++;
+			tf.tf_d=0.0;
 		}
     }
+    tf.tf_i[HIOFFSET] = normhipart;
+    x->x_phase = tf.tf_d - UNITBIT32;	
+	
     return (w+5);	
 }
 

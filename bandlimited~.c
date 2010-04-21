@@ -420,7 +420,7 @@ static void bandlimited_dmaketable(void)
     
     if (bandlimited_sin_table) return;
     bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
-    for (i = BANDLIMITED_TABSIZE, fp = (bandlimited_sin_table+1), phase = 0; i--;
+    for (i = BANDLIMITED_TABSIZE+3, fp = (bandlimited_sin_table), phase = -phsinc; i--;
 		 fp++, phase += phsinc)
 		*fp = sin(phase);
 	
@@ -431,9 +431,7 @@ static void bandlimited_dmaketable(void)
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
 	
-	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+1] = bandlimited_sin_table[1];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[2];
+
 }
 
 static void bandlimited_delete(t_bandlimited *x) {
@@ -479,14 +477,14 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
 	
     
 	if(previous) {
-		previous++;
+
 		max_harmonics0 = max_harmonics-BANDLIMITED_INCREMENT+1;
-		for (i = BANDLIMITED_TABSIZE , fp = (table[pos]+1), phase = 0; i--;
+		for (i = BANDLIMITED_TABSIZE+3 , fp = (table[pos]), phase = -phsinc; i--;
 			 fp++, phase += phsinc,previous++) {
 			*fp = part(max_harmonics0,max_harmonics, phase) + *previous;
 		}
 	} else {
-		for (i = BANDLIMITED_TABSIZE , fp = (table[pos]+1), phase = 0; i--;
+		for (i = BANDLIMITED_TABSIZE+3 , fp = (table[pos]), phase = -phsinc; i--;
 			 fp++, phase += phsinc)
 			*fp = part(1,max_harmonics, phase);
 	}
@@ -499,9 +497,7 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
         bug("bandlimited~: unexpected machine alignment");
 	
 	
-	table[pos][0] = table[pos][BANDLIMITED_TABSIZE]; 
-	table[pos][BANDLIMITED_TABSIZE+1]  = table[pos][1];
-	table[pos][BANDLIMITED_TABSIZE+2]  = table[pos][2];
+
 
 	
 }

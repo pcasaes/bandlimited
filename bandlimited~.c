@@ -40,8 +40,8 @@
 #define BANDLIMITED_MAXHARMONICS 1000 // down to about 22hz at 44.1khz, 24hz at 88.2khz...
 #endif
 
-#define BANDLIMITED_TABSIZE 2048
-#define BANDLIMITED_FINVNPOINTS 0.00048828125   // 1.0 / BANDLIMITED_TABSIZE
+#define BANDLIMITED_TABSIZE 2048						//2048
+#define BANDLIMITED_FINVNPOINTS	0.00048828125				//0.00048828125   // 1.0 / BANDLIMITED_TABSIZE
 
 #define GETSTRING(s) (s)->s_name
 #define ISFLOAT(a) (a.a_type==A_FLOAT)
@@ -126,9 +126,9 @@ typedef struct _bandlimited
 		//bandlimited
 		float s_nq;
 		float cutoff;
-		int max_harmonics_set;
-		int max_harmonics_mod;
-		int max_harmonics;
+		unsigned int max_harmonics_set;
+		unsigned int max_harmonics_mod;
+		unsigned int max_harmonics;
 		
 		
 		
@@ -253,8 +253,8 @@ static inline t_float bandlimited_part(t_bandlimited *x, float *table, t_float i
 	
 }
 
-static t_float bandlimited_squarepart(int start, int max_harmonics, t_float p) {
-	int i;
+static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmonics, t_float p) {
+	unsigned  int i;
 	t_float sum=0.0f;
 	
 	
@@ -305,8 +305,8 @@ static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p
 
 
 
-static t_float bandlimited_trianglepart(int start, int max_harmonics, t_float p) {
-	int i;
+static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
+	unsigned int i;
 	t_float sum=0.0f;
 	
 	
@@ -342,8 +342,8 @@ static t_float bandlimited_triangle(void *o, unsigned int max_harmonics, t_float
 	
 }
 
-static inline t_float bandlimited_sawwavepart(int start, int max_harmonics, t_float p) {
-	int i;
+static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int max_harmonics, t_float p) {
+	unsigned int i;
 	t_float sum=0.0f;
 	
 	for(i = start; i <= max_harmonics; i++) {
@@ -380,9 +380,9 @@ static t_float bandlimited_saw(void *o, unsigned int max_harmonics, t_float p, t
 	
 }
 
-static t_float bandlimited_sawtrianglepart(int start, int max_harmonics, t_float p) {
+static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	
-	int i;
+	unsigned int i;
 	t_float sumt=0.0f;
 	t_float sums=0.0f;
 	t_float sinc;
@@ -479,7 +479,7 @@ static void bandlimited_delete(t_bandlimited *x) {
 	}
 }
 
-static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float (*part)(int, int, t_float))
+static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float (*part)(unsigned int, unsigned int, t_float))
 {
     int i;
     t_float *fp, phase, phsinc = (1.0f) / (BANDLIMITED_TABSIZE-1);
@@ -547,7 +547,7 @@ type_unknown:
 }
 
 static void bandlimited_dmakealltables(void) {
-	int i;
+	unsigned int i;
 	
 	post("bandlimited~: creating look up tables");
    	bandlimited_dmaketable();
@@ -683,6 +683,40 @@ static void bandlimited_testsine(t_bandlimited *x, t_float f) {
 	post("bandlimited~:   real sin(2pi %f) = %f",  f, sin(2.0*BANDLIMITED_PI*f));
 }
 
+static void bandlimited_print(t_bandlimited *x, t_float freq) {
+	unsigned int max_harmonics = (unsigned int)( x->cutoff / freq);
+	unsigned int pos;
+	unsigned int nearest;
+	unsigned int i;
+	t_float (*generator)(unsigned int, unsigned int, t_float)=0;
+	
+
+	
+	if(max_harmonics > x->max_harmonics)
+		max_harmonics = x->max_harmonics;
+	
+	pos = bandlimited_harmpos(max_harmonics);
+	nearest = pos-- * BANDLIMITED_INCREMENT;
+	post("bandlimited~: nearest harmonics is %d of %d", nearest,max_harmonics);
+	if(x->generator == &bandlimited_saw || x->generator == &bandlimited_rsaw) {
+		generator = &bandlimited_sawwavepart;
+	} else if(x->generator == &bandlimited_square) {
+		generator = &bandlimited_squarepart;
+	} else if(x->generator == &bandlimited_triangle) {
+		generator = &bandlimited_trianglepart;
+	} else if(x->generator == &bandlimited_sawtriangle) {
+		generator = &bandlimited_sawtrianglepart;
+	}
+	
+	if(generator) {
+		for(i = 1; i <= max_harmonics; i++) {
+			post("bandlimited~: %d\t%f", i, generator(i, i, 0.25f));
+		}
+	}
+
+	
+}
+
 
 
 
@@ -727,7 +761,7 @@ static t_int *bandlimited_perform(t_int *w) {
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
 	t_float p;
-	int max_harmonics;
+	unsigned int max_harmonics;
 	
     while (n--)
     {
@@ -778,6 +812,8 @@ extern void bandlimited_tilde_setup(void)
 	
     class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
 					gensym("testsine"), A_FLOAT, 0);		
+    class_addmethod(bandlimited_class, (t_method)bandlimited_print,
+					gensym("print"), A_FLOAT, 0);		
 	
 	
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);

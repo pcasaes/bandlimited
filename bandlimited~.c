@@ -141,13 +141,13 @@ typedef struct _bandlimited
 
 
 
-static t_float (*bandlimited_sin)(t_float);
+static double (*bandlimited_sin)(t_float);
 
-static inline t_float bandlimited_sin_real(t_float in) {
-	return sin((2.0f * BANDLIMITED_PI)*in);
+static double bandlimited_sin_real(t_float in) {
+	return sin((2.0 * BANDLIMITED_PI)*in);
 }
 
-static inline t_float bandlimited_sin_4point(t_float in) {
+static double bandlimited_sin_4point(t_float in) {
     double dphase;
     int normhipart;
     union tabfudge tf;
@@ -181,7 +181,7 @@ static inline t_float bandlimited_sin_4point(t_float in) {
 }
 
 
-static inline t_float bandlimited_sin_lin(t_float in) {
+static double bandlimited_sin_lin(t_float in) {
     double dphase;
     int normhipart;
     union tabfudge tf;
@@ -241,7 +241,7 @@ static inline t_float bandlimited_part(float *table, t_float in) {
 
 static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned  int i;
-	t_float sum=0.0f;
+	double sum=0.0f;
 	
 	
 	for(i = start; i <= max_harmonics; i += 2) {
@@ -269,8 +269,6 @@ static inline unsigned int bandlimited_harmpos(int max_harmonics) {
 
 static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p) {
 	t_bandlimited *x = o;
-	//if(1)
-	//	return 4.0f *bandlimited_squarepart(1, max_harmonics, p)/BANDLIMITED_PI;
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -293,7 +291,7 @@ static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p
 
 static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned int i;
-	t_float sum=0.0f;
+	double sum=0.0f;
 	
 	
 	for(i = start; i <= max_harmonics; i += 2) {
@@ -330,7 +328,7 @@ static t_float bandlimited_triangle(void *o, unsigned int max_harmonics, t_float
 
 static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned int i;
-	t_float sum=0.0f;
+	double sum=0.0f;
 	
 	for(i = start; i <= max_harmonics; i++) {
 		
@@ -346,7 +344,7 @@ static inline t_float bandlimited_sawwave(void *o, unsigned int max_harmonics, t
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
-	t_float sum;
+	double sum;
 	sum = bandlimited_part(bandlimited_sawwave_table[pos-1], p);
 	
 	
@@ -369,9 +367,9 @@ static t_float bandlimited_saw(void *o, unsigned int max_harmonics, t_float p) {
 static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	
 	unsigned int i;
-	t_float sumt=0.0f;
-	t_float sums=0.0f;
-	t_float sinc;
+	double sumt=0.0f;
+	double sums=0.0f;
+	double sinc;
 	
 	
 	for(i = start; i <= max_harmonics; i ++) {

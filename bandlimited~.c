@@ -90,9 +90,9 @@
 #endif /* __unix__ or __APPLE__*/
 
 
-#define BANDLIMITED_INCREMENT 12						//16		4
+#define BANDLIMITED_INCREMENT 8						//16		4
 #define BANDLIMITED_HAMSTART 1104					//1104
-#define BANDLIMITED_HAMSIZE 92						//69			276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
+#define BANDLIMITED_HAMSIZE 138						//69			276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
 
 static long bandlimited_count=0l;
 static float *bandlimited_sin_table=0;
@@ -144,6 +144,9 @@ typedef struct _bandlimited
 
 #define bandlimited_sin(freq) bandlimited_sin_4point(freq)
 
+static inline t_float bandlimited_sin_real(t_float in) {
+	return sin((2.0f * BANDLIMITED_PI)*in);
+}
 
 static inline t_float bandlimited_sin_4point(t_float in) {
     double dphase;
@@ -463,9 +466,13 @@ static void bandlimited_delete(t_bandlimited *x) {
 			freebytes(bandlimited_sawtriangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		}	  
 		freebytes(bandlimited_sawwave_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
+		bandlimited_sawwave_table=0;
 		freebytes(bandlimited_triangle_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
+		bandlimited_triangle_table=0;
 		freebytes(bandlimited_square_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
+		bandlimited_square_table=0;
 		freebytes(bandlimited_sawtriangle_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
+		bandlimited_sawtriangle_table=0;
 		
 		
 		
@@ -480,6 +487,9 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
 	unsigned int max_harmonics =  (pos+1) * BANDLIMITED_INCREMENT;
 	unsigned int max_harmonics0;
 	t_float *previous = pos==0? 0: table[pos-1];
+
+	table[pos] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
+
 	
     
 	if(previous) {
@@ -503,9 +513,10 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
         bug("bandlimited~: unexpected machine alignment");
 	
 	
-	table[0] = table[BANDLIMITED_TABSIZE]; 
-	table[BANDLIMITED_TABSIZE+1]  = table[1];
-	table[BANDLIMITED_TABSIZE+2]  = table[2];
+	table[pos][0] = table[pos][BANDLIMITED_TABSIZE]; 
+	table[pos][BANDLIMITED_TABSIZE+1]  = table[pos][1];
+	table[pos][BANDLIMITED_TABSIZE+2]  = table[pos][2];
+
 	
 }
 
@@ -547,16 +558,12 @@ static void bandlimited_dmakealltables(void) {
    	bandlimited_sawtriangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
 	
    	for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
-   		bandlimited_sawwave_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_dmakewavetable(bandlimited_sawwave_table,i, bandlimited_sawwavepart);
-		
-   		bandlimited_triangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
+
 		bandlimited_dmakewavetable(bandlimited_triangle_table,i,bandlimited_trianglepart);
-		
-   		bandlimited_square_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
+
 		bandlimited_dmakewavetable(bandlimited_square_table,i, bandlimited_squarepart);
-		
-   		bandlimited_sawtriangle_table[i] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
+
 		bandlimited_dmakewavetable(bandlimited_sawtriangle_table,i, bandlimited_sawtrianglepart);
    	}	    
 	

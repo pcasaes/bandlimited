@@ -419,8 +419,8 @@ static void bandlimited_dmaketable(void)
     union tabfudge tf;
     
     if (bandlimited_sin_table) return;
-    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+4));
-    for (i = BANDLIMITED_TABSIZE + 1, fp = (bandlimited_sin_table+1), phase = 0; i--;
+    bandlimited_sin_table = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
+    for (i = BANDLIMITED_TABSIZE, fp = (bandlimited_sin_table+1), phase = 0; i--;
 		 fp++, phase += phsinc)
 		*fp = sin(phase);
 	
@@ -431,9 +431,9 @@ static void bandlimited_dmaketable(void)
     if ((unsigned)tf.tf_i[LOWOFFSET] != 0x80000000)
         bug("bandlimited~: unexpected machine alignment");
 	
-	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE+1];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[1];
-	bandlimited_sin_table[BANDLIMITED_TABSIZE+3] = bandlimited_sin_table[2];
+	bandlimited_sin_table[0] = bandlimited_sin_table[BANDLIMITED_TABSIZE];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+1] = bandlimited_sin_table[1];
+	bandlimited_sin_table[BANDLIMITED_TABSIZE+2] = bandlimited_sin_table[2];
 }
 
 static void bandlimited_delete(t_bandlimited *x) {
@@ -441,15 +441,15 @@ static void bandlimited_delete(t_bandlimited *x) {
 	
 	if(--bandlimited_count == 0l) {
 		post("bandlimited~: deleting look up tables");
-		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+4));
+		freebytes(bandlimited_sin_table, sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		bandlimited_sin_table=0;
 		
 		
 		for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
-			freebytes(bandlimited_sawwave_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+4));
-			freebytes(bandlimited_triangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+4));
-			freebytes(bandlimited_square_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+4));
-			freebytes(bandlimited_sawtriangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+4));
+			freebytes(bandlimited_sawwave_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_triangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_square_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
+			freebytes(bandlimited_sawtriangle_table[i], sizeof(float) * (BANDLIMITED_TABSIZE+3));
 		}	  
 		freebytes(bandlimited_sawwave_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
 		bandlimited_sawwave_table=0;
@@ -474,19 +474,19 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
 	unsigned int max_harmonics0;
 	t_float *previous = pos==0? 0: table[pos-1];
 
-	table[pos] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+4));
+	table[pos] = (float *)getbytes(sizeof(float) * (BANDLIMITED_TABSIZE+3));
 
 	
     
 	if(previous) {
 		previous++;
 		max_harmonics0 = max_harmonics-BANDLIMITED_INCREMENT+1;
-		for (i = BANDLIMITED_TABSIZE+1 , fp = (table[pos]+1), phase = 0; i--;
+		for (i = BANDLIMITED_TABSIZE , fp = (table[pos]+1), phase = 0; i--;
 			 fp++, phase += phsinc,previous++) {
 			*fp = part(max_harmonics0,max_harmonics, phase) + *previous;
 		}
 	} else {
-		for (i = BANDLIMITED_TABSIZE+1 , fp = (table[pos]+1), phase = 0; i--;
+		for (i = BANDLIMITED_TABSIZE , fp = (table[pos]+1), phase = 0; i--;
 			 fp++, phase += phsinc)
 			*fp = part(1,max_harmonics, phase);
 	}
@@ -499,9 +499,9 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
         bug("bandlimited~: unexpected machine alignment");
 	
 	
-	table[pos][0] = table[pos][BANDLIMITED_TABSIZE+1]; 
-	table[pos][BANDLIMITED_TABSIZE+2]  = table[pos][1];
-	table[pos][BANDLIMITED_TABSIZE+3]  = table[pos][2];
+	table[pos][0] = table[pos][BANDLIMITED_TABSIZE]; 
+	table[pos][BANDLIMITED_TABSIZE+1]  = table[pos][1];
+	table[pos][BANDLIMITED_TABSIZE+2]  = table[pos][2];
 
 	
 }

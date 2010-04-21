@@ -1,43 +1,27 @@
-#N canvas 650 384 1030 565 10;
-#X obj 248 132 mtof;
-#X floatatom 237 109 5 0 0 0 - - -;
-#X obj 333 388 dac~;
-#N canvas 0 22 450 300 (subpatch) 0;
-#X array \$0.view 575 float 0;
-#X coords 0 1 574 -1 200 140 1;
-#X restore 685 181 graph;
-#X obj 168 365 tabwrite~ \$0.view;
-#X obj 337 159 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+#N canvas 837 332 668 475 10;
+#X text 394 357 see:;
+#X obj 422 358 bl.sq~ 0 1;
+#X obj 491 358 bl.tri~ 0 1;
+#X obj 565 358 bl.saw~ 0 1;
+#X obj 439 380 bl.rsaw~ 0 1;
+#X obj 518 380 bl.sawtri~ 0 1;
+#X text 7 367 (C) Paulo Casaes \, 2010 GPL v2;
+#X text 6 -51 Generates a bandlimited waveform (square \, saw \, reverse
+saw \, triangle and saw-triangle). It's porupse is to producse a signal
+without aliasing.;
+#X obj 447 -51 cnv 15 210 400 empty empty empty 20 12 0 14 -261682
+-66577 0;
+#X obj 537 144 mtof;
+#X floatatom 537 123 5 0 0 0 - - -;
+#X obj 527 302 dac~;
+#X obj 458 179 bng 15 250 50 1 empty empty empty 17 7 0 10 -262144
 -1 -1;
-#X msg 330 201 0;
-#X obj 245 180 sig~;
-#X floatatom 259 156 5 0 0 0 - - -;
-#X msg 33 65 type rsaw;
-#X msg 56 422 cutoff \$1;
-#X floatatom 56 399 5 0 0 0 - - -;
-#X text 91 399 <= 0 resets to nyquist;
-#X msg 440 259 max \$1;
-#X floatatom 446 235 5 0 0 0 - - -;
-#X obj 300 102 samplerate~;
-#X obj 301 81 loadbang;
-#X obj 240 237 bandlimited~ saw 77.78 0 0;
-#X obj 181 198 r \$0.set;
-#X obj 33 85 s \$0.set;
-#X obj 33 130 s \$0.set;
-#X msg 33 110 type saw;
-#X obj 34 175 s \$0.set;
-#X msg 34 155 type square;
-#X obj 34 221 s \$0.set;
-#X msg 34 201 type triangle;
-#X obj 34 266 s \$0.set;
-#X msg 34 246 type sawtriangle;
-#X obj 450 153 r \$0.set;
-#X obj 55 443 s \$0.set;
-#X floatatom 54 473 5 0 0 0 - - -;
-#X obj 53 517 s \$0.set;
-#X msg 54 496 max \$1;
-#X text 417 506 see:;
-#X obj 461 507 bl.sq~ 0 1;
+#X msg 595 200 0;
+#X obj 540 203 sig~;
+#X floatatom 539 175 5 0 0 0 - - -;
+#X obj 580 136 samplerate~;
+#X obj 579 115 loadbang;
+#X obj 455 150 r \$0.set;
 #N canvas 0 22 542 489 fader 0;
 #X obj 97 310 dbtorms;
 #X obj 100 102 vsl 30 64 101 1 1 0 empty empty empty 0 -9 0 10 -203904
@@ -56,97 +40,82 @@
 #X connect 6 0 5 0;
 #X connect 7 0 6 0;
 #X coords 0 -1 1 1 30 70 2 100 100;
-#X restore 432 304 pd fader;
-#X obj 320 359 *~;
-#X obj 596 341 tabread \$0.view;
-#X obj 600 392;
-#X floatatom 598 363 9 0 0 0 - - -;
-#X floatatom 598 314 5 0 0 0 - - -;
-#X msg 637 315 0;
-#X obj 458 427 sin~;
-#X obj 446 460 tabwrite~ \$0.view;
-#X obj 509 434 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
--1 -1;
-#X obj 500 368 cos~ 0;
-#X obj 490 400 -~;
-#X obj 438 389 sig~ 1;
-#X obj 500 338 sig~ 0;
-#X msg 745 374 testsine \$1;
-#X obj 746 397 s \$0.set;
-#X floatatom 744 353 5 0 0 0 - - -;
+#X restore 576 249 pd fader;
+#X obj 531 269 *~;
+#X obj 581 158 / 575;
 #N canvas 0 22 450 300 (subpatch) 0;
-#X array \$0.view2 2051 float 0;
-#X coords 0 1 2050 -1 200 140 1;
-#X restore 682 18 graph;
-#X obj 232 418 tabwrite~ \$0.view2;
-#X obj 301 124 / 575;
-#X obj 381 101 samplerate~;
-#X obj 382 123 / 2048;
-#X obj 401 63 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
--1;
-#X msg 680 444 print \$1;
-#X obj 682 467 s \$0.set;
-#X obj 677 404 mtof;
-#X floatatom 679 424 5 0 0 0 - - -;
-#X floatatom 679 380 5 0 0 0 - - -;
-#X msg 696 353 32;
-#X text 89 473 <= 0 resets to 1104;
-#X msg 763 330 0;
-#X msg 794 330 0.25;
-#X msg 825 329 0.5;
-#X msg 855 330 0.75;
-#X msg 887 330 1;
-#X connect 0 0 8 0;
-#X connect 1 0 0 0;
-#X connect 5 0 4 0;
-#X connect 5 0 6 0;
-#X connect 5 0 53 0;
-#X connect 6 0 17 1;
-#X connect 7 0 17 0;
-#X connect 8 0 7 0;
-#X connect 9 0 19 0;
-#X connect 10 0 29 0;
-#X connect 11 0 10 0;
-#X connect 13 0 17 0;
-#X connect 14 0 13 0;
-#X connect 15 0 54 0;
-#X connect 16 0 15 0;
-#X connect 17 0 4 0;
-#X connect 17 0 36 0;
-#X connect 17 0 53 0;
-#X connect 18 0 17 0;
-#X connect 21 0 20 0;
-#X connect 23 0 22 0;
-#X connect 25 0 24 0;
-#X connect 27 0 26 0;
-#X connect 28 0 5 0;
-#X connect 30 0 32 0;
+#X array \$0.view 575 float 0;
+#X coords 0 1 574 -1 200 140 1;
+#X restore 452 -37 graph;
+#X obj 500 324 tabwrite~ \$0.view;
+#X obj -4 140 cnv 15 450 87 empty empty empty 20 12 0 14 -232576 -66577
+0;
+#X msg 190 146 type rsaw;
+#X obj 190 165 s \$0.set;
+#X obj 257 165 s \$0.set;
+#X msg 257 146 type saw;
+#X obj 324 165 s \$0.set;
+#X msg 324 146 type square;
+#X obj 188 205 s \$0.set;
+#X msg 188 186 type triangle;
+#X obj 283 205 s \$0.set;
+#X msg 283 186 type sawtriangle;
+#X text 5 161 The type method changes the;
+#X text 5 179 waveform type being generated;
+#X obj -4 -2 cnv 15 450 65 empty empty empty 20 12 0 14 -203904 -66577
+0;
+#X text -1 1 The cutoff method sets a limit to the number of harmonics
+generated based on frequency. This acts much like low pass filter.
+By default the nyquist limit is set (cannot be set higher than this).
+0 resets to the default.;
+#X msg 366 24 cutoff \$1;
+#X floatatom 366 5 5 0 0 0 - - -;
+#X obj 366 43 s \$0.set;
+#X obj -4 64 cnv 15 450 75 empty empty empty 20 12 0 14 -170745 -66577
+0;
+#X floatatom 362 72 5 0 0 0 - - -;
+#X obj 361 112 s \$0.set;
+#X msg 362 91 max \$1;
+#X text 1 66 The max method sets the maximum number of harmonics to
+generate. Also acts like a low pass filter who's cut off frequency
+is dependent on the frequency being generated. The default is 1104
+which should cover all frequencies between 20hz and 22050 hz at 44.1kHz.
+0 resets to 1104;
+#X obj -4 228 cnv 15 450 121 empty empty empty 20 12 0 14 -200256 -66577
+0;
+#X obj 498 225 bandlimited~ saw 77.78;
+#X text 2 228 creation arguments: [bandlimited~ type frequency max
+cutoff];
+#X text 8 242 max and cutoff are optional \, 0 sets their defaults.
+;
+#X text 2 259 bandlimited~ works by using a series of wavetables with
+different quanities of harmonics. This is done to keep CPU usage at
+a minimum. The wavetable with the highest harmonic content has a maximum
+of 1104 harmonics. Any frequency below 20hz at 44.1kHz will start to
+geometrically use more CPU power.;
+#X connect 9 0 15 0;
+#X connect 10 0 9 0;
+#X connect 12 0 13 0;
+#X connect 12 0 23 0;
+#X connect 13 0 48 1;
+#X connect 14 0 48 0;
+#X connect 15 0 14 0;
+#X connect 16 0 21 0;
+#X connect 17 0 16 0;
+#X connect 18 0 12 0;
+#X connect 18 0 48 0;
+#X connect 19 0 20 1;
+#X connect 20 0 11 0;
+#X connect 20 0 11 1;
+#X connect 21 0 15 0;
+#X connect 25 0 26 0;
+#X connect 28 0 27 0;
+#X connect 30 0 29 0;
 #X connect 32 0 31 0;
-#X connect 35 0 36 1;
-#X connect 36 0 2 0;
-#X connect 36 0 2 1;
-#X connect 37 0 39 0;
-#X connect 40 0 37 0;
-#X connect 41 0 37 0;
-#X connect 42 0 43 0;
-#X connect 44 0 43 0;
-#X connect 45 0 46 1;
-#X connect 46 0 42 0;
-#X connect 47 0 46 0;
-#X connect 48 0 45 0;
-#X connect 49 0 50 0;
-#X connect 51 0 49 0;
-#X connect 54 0 8 0;
-#X connect 55 0 56 0;
-#X connect 56 0 8 0;
-#X connect 57 0 55 0;
-#X connect 58 0 59 0;
-#X connect 60 0 61 0;
-#X connect 61 0 58 0;
-#X connect 62 0 60 0;
-#X connect 63 0 62 0;
-#X connect 65 0 51 0;
-#X connect 66 0 51 0;
-#X connect 67 0 51 0;
-#X connect 68 0 51 0;
-#X connect 69 0 51 0;
+#X connect 34 0 33 0;
+#X connect 39 0 41 0;
+#X connect 40 0 39 0;
+#X connect 43 0 45 0;
+#X connect 45 0 44 0;
+#X connect 48 0 20 0;
+#X connect 48 0 23 0;

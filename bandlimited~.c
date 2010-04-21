@@ -141,7 +141,7 @@ typedef struct _bandlimited
 
 
 
-#define bandlimited_sin(freq) bandlimited_sin_4point(freq)
+static t_float (*bandlimited_sin)(t_float);
 
 static inline t_float bandlimited_sin_real(t_float in) {
 	return sin((2.0f * BANDLIMITED_PI)*in);
@@ -532,6 +532,7 @@ static void bandlimited_dmakealltables(void) {
 	unsigned int i;
 	
 	post("bandlimited~: creating look up tables");
+	bandlimited_sin = &bandlimited_sin_real;
    	bandlimited_dmaketable();
 	
    	bandlimited_sawwave_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
@@ -547,7 +548,8 @@ static void bandlimited_dmakealltables(void) {
 		bandlimited_dmakewavetable(bandlimited_square_table,i, bandlimited_squarepart);
 
 		bandlimited_dmakewavetable(bandlimited_sawtriangle_table,i, bandlimited_sawtrianglepart);
-   	}	    
+   	}
+	bandlimited_sin = &bandlimited_sin_4point;
 	
 }
 
@@ -746,13 +748,17 @@ static t_int *bandlimited_perform(t_int *w) {
 	
     while (n--)
     {
+		if(*in > 0.0) {
+			max_harmonics = (int)( x->cutoff / *in);
+			if(max_harmonics > x->max_harmonics)
+				max_harmonics = x->max_harmonics;
 		
-		max_harmonics = (int)( x->cutoff / *in);
-		if(max_harmonics > x->max_harmonics)
-			max_harmonics = x->max_harmonics;
-		
-		p = bandlimited_phasor(x, *in++);
-		*out++ =  x->generator(x, max_harmonics, p);
+			p = bandlimited_phasor(x, *in++);
+			*out++ =  x->generator(x, max_harmonics, p);
+		} else {
+			*out++ = 0.0f;
+			in++;
+		}
     }
     return (w+5);	
 }

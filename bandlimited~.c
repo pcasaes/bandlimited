@@ -37,7 +37,7 @@
 
 #ifdef BANDLIMITED_MAXHARMONICS
 #else
-#define BANDLIMITED_MAXHARMONICS 1104 // down to about 22hz at 44.1khz, 24hz at 88.2khz...
+#define BANDLIMITED_MAXHARMONICS 1104 // down to about 20hz at 44.1khz, 40hz at 88.2khz...
 #endif
 
 #define BANDLIMITED_TABSIZE 2048						//2048
@@ -152,6 +152,8 @@ typedef struct _bandlimited
  *
  * param float *  pointer to wavetable
  * param t_float phase to lookup
+ *
+ * return t_float result of the table lookup
  */
 static inline t_float bandlimited_read4(float *table, t_float p) {
 	
@@ -191,6 +193,8 @@ static inline t_float bandlimited_read4(float *table, t_float p) {
  * a signal the 4point interpolation sin wavetable function should be used.
  *
  * param t_float phase
+ *
+ * return double evaluation of sin function
  */
 static double (*bandlimited_sin)(t_float);
 
@@ -198,6 +202,8 @@ static double (*bandlimited_sin)(t_float);
  * This function performs sin(2pi *x) using the real sin function.
  *
  * param t_float phase
+ *
+ * return double evaluation of sin function
  */
 static double bandlimited_sin_real(t_float p) {
 	return sin((2.0 * BANDLIMITED_PI)*p);
@@ -208,6 +214,8 @@ static double bandlimited_sin_real(t_float p) {
  * This function performs sin(2pi * x) using 4-point interpolation on top of a wavetable.
  *
  * param t_float phase
+ *
+ * return double evaluation of sin function
  */
 static double bandlimited_sin_4point(t_float p) {
 	return bandlimited_read4(bandlimited_sin_table, p);
@@ -219,7 +227,9 @@ static double bandlimited_sin_4point(t_float p) {
  * It's here for testing purposes.
  *
  * param t_float phase
- */
+ *
+ * return double evaluation of sin function
+*/
 static double bandlimited_sin_lin(t_float p) {
     double dphase;
     int normhipart;
@@ -243,7 +253,16 @@ static double bandlimited_sin_lin(t_float p) {
 #endif
 
 
-
+/*
+ * This function calculates the harmonic components for a square wave on
+ * phase p from start to max_harmonics
+ *
+ * param unsigned int starting harmonic
+ * param unsigned int stopping harmonic
+ * param t_float phase
+ *
+ * return t_float the calculated wave component
+ */
 static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned  int i;
 	double sum=0.0f;

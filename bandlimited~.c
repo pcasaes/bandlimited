@@ -252,6 +252,26 @@ static double bandlimited_sin_lin(t_float p) {
 }
 #endif
 
+/*
+ * calculates the wavetable position that is nearest to the number of 
+ * harmonics specified
+ *
+ * param unsigned int max harmonics to lookup
+ *
+ * return unsigned int wavetable position + 1
+ */
+static inline unsigned int bandlimited_harmpos(unsigned int max_harmonics) {
+	
+	unsigned int pos =  rint((1.0f*max_harmonics)/BANDLIMITED_INCREMENT);
+	if(pos > BANDLIMITED_HAMSIZE)
+		pos = BANDLIMITED_HAMSIZE;
+	else if(pos < 1)
+		pos=1;
+	
+	return pos;
+	
+}
+
 
 /*
  * This function calculates the harmonic components for a square wave on
@@ -277,20 +297,16 @@ static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmo
 }
 
 
-static inline unsigned int bandlimited_harmpos(int max_harmonics) {
-	
-	unsigned int pos =  rint((1.0f*max_harmonics)/BANDLIMITED_INCREMENT);
-	if(pos > BANDLIMITED_HAMSIZE)
-		pos = BANDLIMITED_HAMSIZE;
-	else if(pos < 1)
-		pos=1;
-	
-	return pos;
-	
-}
 
-
-
+/*
+ * This function generates a normalized square wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
 static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
 
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
@@ -312,7 +328,16 @@ static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
 
 
 
-
+/*
+ * This function calculates the harmonic components for a triangle wave on
+ * phase p from start to max_harmonics
+ *
+ * param unsigned int starting harmonic
+ * param unsigned int stopping harmonic
+ * param t_float phase
+ *
+ * return t_float the calculated wave component
+ */
 static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned int i;
 	double sum=0.0f;
@@ -328,7 +353,15 @@ static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_har
 	return  sum ;
 }
 
-
+/*
+ * This function generates a normalized triangle wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
 static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
@@ -348,6 +381,16 @@ static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	
 }
 
+/*
+ * This function calculates the harmonic components for a sawtooth wave on
+ * phase p from start to max_harmonics
+ *
+ * param unsigned int starting harmonic
+ * param unsigned int stopping harmonic
+ * param t_float phase
+ *
+ * return t_float the calculated wave component
+ */
 static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	unsigned int i;
 	double sum=0.0f;
@@ -360,6 +403,15 @@ static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int m
 	return   sum;
 }
 
+/*
+ * This function generates a non normalized sawtooth wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
 static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p) {
 
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
@@ -380,12 +432,43 @@ static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p)
 	
 }
 
-static t_float bandlimited_saw( unsigned int max_harmonics, t_float p) {
+/*
+ * This function generates a normalized sawtooth wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_saw(unsigned int max_harmonics, t_float p) {
 	return -2.0f * bandlimited_sawwave(max_harmonics,  p);
-	//return -2.0f * bandlimited_sawwave(o, max_harmonics, p);
-	
 }
 
+/*
+ * This function generates a normalized reverse sawtooth wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
+	return 2.0f * bandlimited_sawwave(max_harmonics, p);
+}
+
+
+/*
+ * This function calculates the harmonic components for a sawtooth-triangle wave on
+ * phase p from start to max_harmonics
+ *
+ * param unsigned int starting harmonic
+ * param unsigned int stopping harmonic
+ * param t_float phase
+ *
+ * return t_float the calculated wave component
+ */
 static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_harmonics, t_float p) {
 	
 	unsigned int i;
@@ -406,6 +489,15 @@ static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_
 	
 }
 
+/*
+ * This function generates a normalized sawtooth-triangle wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
 static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
@@ -426,9 +518,6 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 	
 }
 
-static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
-	return 2.0f * bandlimited_sawwave(max_harmonics, p);
-}
 
 
 static void bandlimited_dmaketable(void)

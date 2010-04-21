@@ -23,7 +23,7 @@
  mailto:irmaosaturno@gmail.com
  
  
- 
+ Copyright (c) 1997-1999 Miller Puckette and others
  Code was liberally borrowed from d_osc.c and d_array.c
  
  */

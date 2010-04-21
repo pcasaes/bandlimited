@@ -132,7 +132,7 @@ typedef struct _bandlimited
 		
 		
 		//type
-		t_float (*generator)(void *, unsigned int, t_float);
+		t_float (*generator)(unsigned int, t_float);
 		
 		
 		
@@ -267,8 +267,8 @@ static inline unsigned int bandlimited_harmpos(int max_harmonics) {
 
 
 
-static t_float bandlimited_square(void *o, unsigned int max_harmonics, t_float p) {
-	t_bandlimited *x = o;
+static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
+
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -305,9 +305,7 @@ static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_har
 }
 
 
-static t_float bandlimited_triangle(void *o, unsigned int max_harmonics, t_float p) {
-	t_bandlimited *x = o;
-	
+static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -338,8 +336,8 @@ static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int m
 	return   sum;
 }
 
-static inline t_float bandlimited_sawwave(void *o, unsigned int max_harmonics, t_float p) {
-	t_bandlimited *x = o;
+static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p) {
+
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -358,8 +356,8 @@ static inline t_float bandlimited_sawwave(void *o, unsigned int max_harmonics, t
 	
 }
 
-static t_float bandlimited_saw(void *o, unsigned int max_harmonics, t_float p) {
-	return -2.0f * bandlimited_sawwave(o, max_harmonics,  p);
+static t_float bandlimited_saw( unsigned int max_harmonics, t_float p) {
+	return -2.0f * bandlimited_sawwave(max_harmonics,  p);
 	//return -2.0f * bandlimited_sawwave(o, max_harmonics, p);
 	
 }
@@ -384,9 +382,8 @@ static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_
 	
 }
 
-static t_float bandlimited_sawtriangle(void *o,  unsigned int max_harmonics, t_float p) {
-	t_bandlimited *x = o;
-	
+static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
+
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -405,8 +402,8 @@ static t_float bandlimited_sawtriangle(void *o,  unsigned int max_harmonics, t_f
 	
 }
 
-static t_float bandlimited_rsaw(void *o, unsigned int max_harmonics, t_float p) {
-	return 2.0f * bandlimited_sawwave(o, max_harmonics, p);
+static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
+	return 2.0f * bandlimited_sawwave(max_harmonics, p);
 }
 
 
@@ -752,7 +749,7 @@ static t_int *bandlimited_perform(t_int *w) {
 				max_harmonics = x->max_harmonics;
 		
 			p = bandlimited_phasor(x, *in++);
-			*out++ =  x->generator(x, max_harmonics, p);
+			*out++ =  x->generator(max_harmonics, p);
 		} else {
 			*out++ = 0.0f;
 			in++;

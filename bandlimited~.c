@@ -37,7 +37,7 @@
 
 #ifdef BANDLIMITED_MAXHARMONICS
 #else
-#define BANDLIMITED_MAXHARMONICS 1000 // down to about 22hz at 44.1khz, 24hz at 88.2khz...
+#define BANDLIMITED_MAXHARMONICS 1104 // down to about 22hz at 44.1khz, 24hz at 88.2khz...
 #endif
 
 #define BANDLIMITED_TABSIZE 2048						//2048

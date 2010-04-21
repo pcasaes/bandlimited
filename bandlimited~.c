@@ -94,6 +94,13 @@
 #define BANDLIMITED_HAMSTART 1104					//1104
 #define BANDLIMITED_HAMSIZE 138						//69			276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
 
+#define DEBUG 1
+#ifdef DEBUG
+#define debug(x) x
+#else
+#define debug(x)
+#endif
+
 static long bandlimited_count=0l;
 static float *bandlimited_sin_table=0;
 static float **bandlimited_triangle_table=0;
@@ -180,7 +187,7 @@ static double bandlimited_sin_4point(t_float in) {
 	
 }
 
-
+#ifdef DEBUG
 static double bandlimited_sin_lin(t_float in) {
     double dphase;
     int normhipart;
@@ -201,6 +208,7 @@ static double bandlimited_sin_lin(t_float in) {
 	f2 = addr[1];
 	return (f1 + frac * (f2 - f1));
 }
+#endif
 
 static inline t_float bandlimited_part(float *table, t_float in) {
 	
@@ -655,6 +663,7 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 	
 }
 
+#ifdef DEBUG
 static void bandlimited_testsine(t_bandlimited *x, t_float f) {
 	post("bandlimited~: linear sin(2pi %f) = %f", f, bandlimited_sin_lin(f));
 	post("bandlimited~: 4point sin(2pi %f) = %f", f, bandlimited_sin(f));
@@ -694,7 +703,7 @@ static void bandlimited_print(t_bandlimited *x, t_float freq) {
 
 	
 }
-
+#endif
 
 
 
@@ -783,10 +792,10 @@ extern void bandlimited_tilde_setup(void)
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
 	
-    class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
-					gensym("testsine"), A_FLOAT, 0);		
-    class_addmethod(bandlimited_class, (t_method)bandlimited_print,
-					gensym("print"), A_FLOAT, 0);		
+    debug(class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
+					gensym("testsine"), A_FLOAT, 0);)		
+    debug(class_addmethod(bandlimited_class, (t_method)bandlimited_print,
+					gensym("print"), A_FLOAT, 0);)		
 	
 	
 	post("bandlimited~: band limited signal generator. Using %d as the default maximum harmonics (to redefine compile with -DBANDLIMITED_MAXHARMONICS=x flag).", BANDLIMITED_MAXHARMONICS);

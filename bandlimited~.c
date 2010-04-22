@@ -22,6 +22,8 @@
  http://http://gitorious.org/~saturno
  mailto:irmaosaturno@gmail.com
  
+ v 0.90
+ 
  
  Copyright (c) 1997-1999 Miller Puckette and others
  Code was liberally borrowed from d_osc.c and d_array.c

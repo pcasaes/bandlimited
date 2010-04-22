@@ -93,6 +93,7 @@ different quanities of harmonics. This is done to keep CPU usage at
 a minimum. The wavetable with the highest harmonic content has a maximum
 of 1104 harmonics. Any frequency below 20hz at 44.1kHz will start to
 geometrically use more CPU power.;
+#X text 33 389 v 0.9;
 #X connect 9 0 15 0;
 #X connect 10 0 9 0;
 #X connect 12 0 13 0;

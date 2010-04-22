@@ -46,8 +46,6 @@
 #X obj 279 99 mtof~;
 #X text 8 -44 creation paramters:;
 #X text 35 -29 1 frequency;
-#X text 35 -16 2 max number of generated harmonics (non-zero harmonics)
-;
 #X text 35 -2 3 cut off frequency \, stops generating harmonics at
 this frequency (cannot be higher than the nyquist limit);
 #X text 327 82 default cut off frequency is nyquist limit;
@@ -75,6 +73,7 @@ limit). Any value greater than the nyquist limit will be ignored.;
 #X text 327 66 default max harmonics is 1104;
 #X text 200 205 max method sets the max number of generated harmonis
 \, 0 sets default (1104).;
+#X text 35 -16 2 max number of generated harmonics;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;
 #X connect 2 0 1 1;
@@ -82,15 +81,15 @@ limit). Any value greater than the nyquist limit will be ignored.;
 #X connect 4 0 3 1;
 #X connect 5 0 4 1;
 #X connect 6 0 7 0;
-#X connect 7 0 26 0;
-#X connect 8 0 29 0;
-#X connect 14 0 27 0;
-#X connect 15 0 14 0;
-#X connect 18 0 27 1;
-#X connect 19 0 18 0;
-#X connect 20 0 21 0;
-#X connect 21 0 27 1;
-#X connect 22 0 27 1;
-#X connect 26 0 8 0;
-#X connect 27 0 1 0;
-#X connect 29 0 4 0;
+#X connect 7 0 25 0;
+#X connect 8 0 28 0;
+#X connect 13 0 26 0;
+#X connect 14 0 13 0;
+#X connect 17 0 26 1;
+#X connect 18 0 17 0;
+#X connect 19 0 20 0;
+#X connect 20 0 26 1;
+#X connect 21 0 26 1;
+#X connect 25 0 8 0;
+#X connect 26 0 1 0;
+#X connect 28 0 4 0;

@@ -132,8 +132,6 @@ typedef struct _bandlimited
 		//bandlimited
 		float s_nq;
 		float cutoff;
-		unsigned int max_harmonics_set;
-		unsigned int max_harmonics_mod;
 		unsigned int max_harmonics;
 		
 		
@@ -613,24 +611,18 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
 static inline int t_bandlimitedypeset(t_bandlimited *x, t_symbol *type) {
 	if(strcmp(GETSTRING(type), "saw") == 0) {
 		x->generator=  &bandlimited_saw;
-		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
 		x->generator=  &bandlimited_rsaw;
-		x->max_harmonics_mod=1;
 	} else if(strcmp(GETSTRING(type), "square") == 0) {
 		x->generator=  &bandlimited_square;
-		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
 		x->generator=  &bandlimited_triangle;
-		x->max_harmonics_mod=2;
 	} else if(strcmp(GETSTRING(type), "sawtriangle") == 0) {
 		x->generator=  &bandlimited_sawtriangle;
-		x->max_harmonics_mod=1;
 	} else {
 		goto type_unknown;
 		
 	}
-	x->max_harmonics = x->max_harmonics * x->max_harmonics_mod;
 	return 0;
 type_unknown:
 	return 1;
@@ -763,8 +755,7 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 	}
 	else if(val > BANDLIMITED_MAXHARMONICS) 
 		post("bandlimited~: maximum number of harmonics %d might be too high. you are warned", val);
-	x->max_harmonics_set = val;
-	x->max_harmonics = x->max_harmonics_set * x->max_harmonics_mod;
+	x->max_harmonics = val;
 	
 }
 

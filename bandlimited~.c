@@ -517,7 +517,10 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 }
 
 
-
+/*
+ * This function generates the sin(2pi * x) wavetable.
+ *
+ */
 static void bandlimited_dmaketable(void)
 {
     int i;
@@ -540,6 +543,11 @@ static void bandlimited_dmaketable(void)
 
 }
 
+/*
+ * This function is called when the last bandlimited~ object
+ * is deleted. It clears up the meory used by all wavetables.
+ *
+ */
 static void bandlimited_delete(t_bandlimited *x) {
 	int i;
 	
@@ -569,6 +577,16 @@ static void bandlimited_delete(t_bandlimited *x) {
 	}
 }
 
+/*
+ * This function generates a waveform wavetable with a certain number
+ * of harmonics
+ *
+ * param float** pointer to all wavetables of a certain waveform
+ * param unsigned int position of the wavetable in the first parameter
+ *						number of harmonics is this value plus 1 times BANDLIMITED_INCREMENT
+ * param t_float *(unsigned int, unsigned int, t_float) pointer to waveform part function
+ *
+ */
 static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float (*part)(unsigned int, unsigned int, t_float))
 {
     int i;
@@ -608,7 +626,15 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
 	
 }
 
-static inline int t_bandlimitedypeset(t_bandlimited *x, t_symbol *type) {
+/*
+ * This function sets the waveform type.
+ *
+ * param t_bandlimited* pointer to the bandlimited~ object
+ * param t_symbol * symbol of the waveform: square, triangle, saw, rsaw, sawtriangle
+ *
+ * return int 0 on sucess, 1 on failute (invalid type)
+ */
+static inline int t_bandlimitedtypeset(t_bandlimited *x, t_symbol *type) {
 	if(strcmp(GETSTRING(type), "saw") == 0) {
 		x->generator=  &bandlimited_saw;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
@@ -711,7 +737,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
     x->x_f = f;
 	x->s_nq=0;
 	x->max_harmonics=max_harmonics;
-	if(t_bandlimitedypeset(x, type) == 1) {
+	if(t_bandlimitedtypeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
 	}
@@ -802,16 +828,29 @@ static void bandlimited_print(t_bandlimited *x, t_float freq) {
 #endif
 
 
-
-static void t_bandlimitedype(t_bandlimited *x, t_symbol *type)
+/*
+ * This function is the set method.
+ *
+ * param t_bandlimited* pointer to the bandlimited~ object
+ * param t_symbol * symbol of the waveform: square, triangle, saw, rsaw, sawtriangle
+ *
+ */
+static void bandlimited_type(t_bandlimited *x, t_symbol *type)
 {
-	if(t_bandlimitedypeset(x, type) == 1) {
+	if(t_bandlimitedtypeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, leaving as is", GETSTRING(type));
 	}
 }
 
 
 
+/*
+ * This function implements the signal loop;
+ *
+ * param t_bant_int* array with parameters added on dsp call
+ *
+ * return t_int* pointer to next position
+ */
 static t_int *bandlimited_perform(t_int *w) {
     t_bandlimited *x = (t_bandlimited *)(w[1]);
     t_float *in = (t_float *)(w[2]);
@@ -837,9 +876,10 @@ static t_int *bandlimited_perform(t_int *w) {
 			p = tf.tf_d - UNITBIT32;
 			tf.tf_d = dphase;
 			
-			max_harmonics = (int)( x->cutoff / *in++);
-			if(max_harmonics > x->max_harmonics)
-				max_harmonics = x->max_harmonics;
+			max_harmonics = (int)fmin((int)( x->cutoff / *in++), x->max_harmonics);
+			//max_harmonics = (int)( x->cutoff / *in++);
+			//if(max_harmonics > x->max_harmonics)
+				//max_harmonics = x->max_harmonics;
 		
 
 			*out++ =  x->generator(max_harmonics, p);
@@ -858,6 +898,10 @@ static t_int *bandlimited_perform(t_int *w) {
 
 
 
+/*
+ * This function turns DSP on
+ *
+ */
 static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 {
 	x->x_conv = 1./sp[0]->s_sr;
@@ -873,6 +917,10 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 
 
 
+/*
+ * Setup function
+ *
+ */
 extern void bandlimited_tilde_setup(void)
 {
     bandlimited_class = class_new(gensym("bandlimited~"), (t_newmethod)bandlimited_new, (t_method) bandlimited_delete,
@@ -881,7 +929,7 @@ extern void bandlimited_tilde_setup(void)
     class_addmethod(bandlimited_class, (t_method)bandlimited_dsp, gensym("dsp"), 0);
     class_addmethod(bandlimited_class, (t_method)bandlimited_ft1,
 					gensym("ft1"), A_FLOAT, 0);	
-    class_addmethod(bandlimited_class, (t_method)t_bandlimitedype,
+    class_addmethod(bandlimited_class, (t_method)bandlimited_type,
 					gensym("type"), A_SYMBOL, 0);	
     class_addmethod(bandlimited_class, (t_method)bandlimited_cutoff,
 					gensym("cutoff"), A_FLOAT, 0);		

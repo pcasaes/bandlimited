@@ -131,7 +131,6 @@ typedef struct _bandlimited
 		
 		//phasor
 		double x_phase;
-		float x_conv;
 		float x_f;      /* scalar frequency */
 		
 
@@ -914,7 +913,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 		x->generator=  &bandlimited_saw;
 	}
     x->x_phase = 0;
-    x->x_conv = 0;
+
 	
 	
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
@@ -1038,12 +1037,22 @@ static t_int *bandlimited_perform(t_int *w) {
     t_float *in = (t_float *)(w[2]);
     t_float *out = (t_float *)(w[3]);
     int n = (int)(w[4]);
+	t_signal *sp = (t_signal *)(w[5]);
 	t_float p;
     double dphase = x->x_phase + UNITBIT32;
     union tabfudge tf;
     int normhipart;
-    float conv = x->x_conv;
 	unsigned int max_harmonics;
+	t_float cutoff;
+	float conv;
+	
+	conv = 1.0f/sp->s_sr;
+	x->s_nq = sp->s_sr / 2.0f - 1;
+	cutoff = x->cutoff == 0? x->s_nq : x->cutoff;
+
+
+
+	
 
 	tf.tf_d = UNITBIT32;
     normhipart = tf.tf_i[HIOFFSET];
@@ -1058,7 +1067,7 @@ static t_int *bandlimited_perform(t_int *w) {
 			p = tf.tf_d - UNITBIT32;
 			tf.tf_d = dphase;
 			
-			max_harmonics = (int)fmin((int)( x->cutoff / *in++), x->max_harmonics);
+			max_harmonics = (int)fmin((int)( cutoff / *in++), x->max_harmonics);
 			//max_harmonics = (int)( x->cutoff / *in++);
 			//if(max_harmonics > x->max_harmonics)
 			//	max_harmonics = x->max_harmonics;
@@ -1074,7 +1083,7 @@ static t_int *bandlimited_perform(t_int *w) {
     tf.tf_i[HIOFFSET] = normhipart;
     x->x_phase = tf.tf_d - UNITBIT32;	
 	
-    return (w+5);	
+    return (w+6);	
 }
 
 
@@ -1086,15 +1095,9 @@ static t_int *bandlimited_perform(t_int *w) {
  */
 static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 {
-	x->x_conv = 1./sp[0]->s_sr;
-	x->s_nq = sp[0]->s_sr / 2.0f;
-	if(x->cutoff == 0)
-		x->cutoff = ( x->s_nq)  - 1.0;
-	else if(x->cutoff > x->s_nq) {
-		error("bandlimited~: %f is greater than the nyquist limit %f, you are warned", x->cutoff, x->s_nq);
-	}
+
     
-	dsp_add(bandlimited_perform, 4, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n);
+	dsp_add(bandlimited_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n, sp[0]);
 }
 
 

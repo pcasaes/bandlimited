@@ -1,10 +1,5 @@
 #N canvas 837 332 668 475 10;
-#X text 394 357 see:;
-#X obj 422 358 bl.sq~ 0 1;
-#X obj 491 358 bl.tri~ 0 1;
-#X obj 565 358 bl.saw~ 0 1;
-#X obj 439 380 bl.rsaw~ 0 1;
-#X obj 518 380 bl.sawtri~ 0 1;
+#X text 392 364 see:;
 #X text 7 367 (C) Paulo Casaes \, 2010 GPL v2;
 #X text 6 -51 Generates a bandlimited waveform (square \, saw \, reverse
 saw \, triangle and saw-triangle). It's porupse is to producse a signal
@@ -48,75 +43,89 @@ without aliasing.;
 #X coords 0 1 574 -1 200 140 1;
 #X restore 452 -37 graph;
 #X obj 500 324 tabwrite~ \$0.view;
-#X obj -4 140 cnv 15 450 87 empty empty empty 20 12 0 14 -232576 -66577
+#X obj -4 136 cnv 15 450 87 empty empty empty 20 12 0 14 -232576 -66577
 0;
-#X msg 190 146 type rsaw;
-#X obj 190 165 s \$0.set;
-#X obj 257 165 s \$0.set;
-#X msg 257 146 type saw;
-#X obj 324 165 s \$0.set;
-#X msg 324 146 type square;
-#X obj 188 205 s \$0.set;
-#X msg 188 186 type triangle;
-#X obj 283 205 s \$0.set;
-#X msg 283 186 type sawtriangle;
-#X text 5 161 The type method changes the;
-#X text 5 179 waveform type being generated;
+#X msg 190 142 type rsaw;
+#X obj 190 161 s \$0.set;
+#X obj 257 161 s \$0.set;
+#X msg 257 142 type saw;
+#X obj 324 161 s \$0.set;
+#X msg 324 142 type square;
+#X obj 188 201 s \$0.set;
+#X msg 188 182 type triangle;
+#X obj 283 201 s \$0.set;
+#X msg 283 182 type sawtriangle;
+#X text 5 157 The type method changes the;
+#X text 5 175 waveform type being generated;
 #X obj -4 -2 cnv 15 450 65 empty empty empty 20 12 0 14 -203904 -66577
 0;
-#X text -1 1 The cutoff method sets a limit to the number of harmonics
+#X text -1 -3 The cutoff method sets a limit to the number of harmonics
 generated based on frequency. This acts much like low pass filter.
 By default the nyquist limit is set (cannot be set higher than this).
 0 resets to the default.;
-#X msg 366 24 cutoff \$1;
-#X floatatom 366 5 5 0 0 0 - - -;
-#X obj 366 43 s \$0.set;
-#X obj -4 64 cnv 15 450 75 empty empty empty 20 12 0 14 -170745 -66577
+#X msg 366 20 cutoff \$1;
+#X floatatom 366 1 5 0 0 0 - - -;
+#X obj 366 39 s \$0.set;
+#X obj -4 60 cnv 15 450 75 empty empty empty 20 12 0 14 -170745 -66577
 0;
-#X floatatom 362 72 5 0 0 0 - - -;
-#X obj 361 112 s \$0.set;
-#X msg 362 91 max \$1;
-#X text 1 66 The max method sets the maximum number of harmonics to
+#X floatatom 362 68 5 0 0 0 - - -;
+#X obj 361 108 s \$0.set;
+#X msg 362 87 max \$1;
+#X text 1 62 The max method sets the maximum number of harmonics to
 generate. Also acts like a low pass filter who's cut off frequency
 is dependent on the frequency being generated. The default is 1104
 which should cover all frequencies between 20hz and 22050 hz at 44.1kHz.
 0 resets to 1104;
-#X obj -4 228 cnv 15 450 121 empty empty empty 20 12 0 14 -200256 -66577
+#X obj -4 224 cnv 15 450 125 empty empty empty 20 12 0 14 -200256 -66577
 0;
 #X obj 498 225 bandlimited~ saw 77.78;
-#X text 2 228 creation arguments: [bandlimited~ type frequency max
-cutoff];
-#X text 8 242 max and cutoff are optional \, 0 sets their defaults.
-;
-#X text 2 259 bandlimited~ works by using a series of wavetables with
+#X obj 364 323 s \$0.set;
+#X obj 365 284 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+1;
+#X msg 365 302 approximate \$1;
+#X text 2 255 bandlimited~ works by using a series of wavetables with
 different quanities of harmonics. This is done to keep CPU usage at
 a minimum. The wavetable with the highest harmonic content has a maximum
 of 1104 harmonics. Any frequency below 20hz at 44.1kHz will start to
-geometrically use more CPU power.;
-#X text 33 389 v 0.9;
-#X connect 9 0 15 0;
+geometrically use more CPU power. By enabling the approximate method
+it will use slightly less CPU and generate a close enough waveform.
+;
+#X text 2 224 creation arguments: [bandlimited~ type frequency max
+cutoff;
+#X text 360 223 approximate];
+#X text 8 238 max cutoff approximate are optional \, 0 sets their defaults.
+;
+#X obj 422 358 bl.sq~ 0 1;
+#X obj 439 380 bl.rsaw~ 0 1;
+#X obj 565 358 bl.saw~ 0 1;
+#X obj 491 358 bl.tri~ 0 1;
+#X obj 518 380 bl.sawtri~ 0 1;
+#X text 33 389 v 0.91;
+#X connect 4 0 10 0;
+#X connect 5 0 4 0;
+#X connect 7 0 8 0;
+#X connect 7 0 18 0;
+#X connect 8 0 43 1;
+#X connect 9 0 43 0;
 #X connect 10 0 9 0;
-#X connect 12 0 13 0;
-#X connect 12 0 23 0;
-#X connect 13 0 48 1;
-#X connect 14 0 48 0;
-#X connect 15 0 14 0;
-#X connect 16 0 21 0;
-#X connect 17 0 16 0;
-#X connect 18 0 12 0;
-#X connect 18 0 48 0;
-#X connect 19 0 20 1;
-#X connect 20 0 11 0;
-#X connect 20 0 11 1;
-#X connect 21 0 15 0;
-#X connect 25 0 26 0;
-#X connect 28 0 27 0;
-#X connect 30 0 29 0;
-#X connect 32 0 31 0;
-#X connect 34 0 33 0;
-#X connect 39 0 41 0;
+#X connect 11 0 16 0;
+#X connect 12 0 11 0;
+#X connect 13 0 7 0;
+#X connect 13 0 43 0;
+#X connect 14 0 15 1;
+#X connect 15 0 6 0;
+#X connect 15 0 6 1;
+#X connect 16 0 10 0;
+#X connect 20 0 21 0;
+#X connect 23 0 22 0;
+#X connect 25 0 24 0;
+#X connect 27 0 26 0;
+#X connect 29 0 28 0;
+#X connect 34 0 36 0;
+#X connect 35 0 34 0;
+#X connect 38 0 40 0;
 #X connect 40 0 39 0;
-#X connect 43 0 45 0;
-#X connect 45 0 44 0;
-#X connect 48 0 20 0;
-#X connect 48 0 23 0;
+#X connect 43 0 15 0;
+#X connect 43 0 18 0;
+#X connect 45 0 46 0;
+#X connect 46 0 44 0;

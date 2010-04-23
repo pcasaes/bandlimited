@@ -103,7 +103,7 @@
 #define BANDLIMITED_HAMSTART 1104					//1104
 #define BANDLIMITED_HAMSIZE 138						//69			276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
 
-#define DEBUG 1
+#define DEBUG 0
 #ifdef DEBUG
 #define debug(x) x
 #else
@@ -142,6 +142,8 @@ typedef struct _bandlimited
 		float s_nq;
 		float cutoff;
 		unsigned int max_harmonics;
+		int approximate;
+		t_symbol *type;
 		
 		
 		
@@ -152,6 +154,8 @@ typedef struct _bandlimited
 		
 		
 	} t_bandlimited;
+
+#define bandlimited_read(q,w) bandlimited_read4((q),(w))
 
 /*
  * This function performs a 4 point interpolation lookup on the table.
@@ -194,6 +198,8 @@ static inline t_float bandlimited_read4(float *table, t_float p) {
 					   );
 }
 
+
+
 /*
  * This variables sets the sin function being used. When building 
  * the wave tables the real sin function should be used. When generating
@@ -225,7 +231,7 @@ static double bandlimited_sin_real(t_float p) {
  * return double evaluation of sin function
  */
 static double bandlimited_sin_4point(t_float p) {
-	return bandlimited_read4(bandlimited_sin_table, p);
+	return bandlimited_read(bandlimited_sin_table, p);
 }
 
 #ifdef DEBUG
@@ -272,12 +278,33 @@ static inline unsigned int bandlimited_harmpos(unsigned int max_harmonics) {
 	unsigned int pos =  rint((1.0f*max_harmonics)/BANDLIMITED_INCREMENT);
 	if(pos > BANDLIMITED_HAMSIZE)
 		pos = BANDLIMITED_HAMSIZE;
-	else if(pos < 1)
+	else if(pos == 0)
 		pos=1;
 	
 	return pos;
 	
 }
+
+/*
+ * calculates the wavetable position that is nearest to and below the number of 
+ * harmonics specified
+ *
+ * param unsigned int max harmonics to lookup
+ *
+ * return unsigned int wavetable position + 1
+ */
+static inline unsigned int bandlimited_harmposfloor(unsigned int max_harmonics) {
+	
+	unsigned int pos =  (unsigned int)fmin(floor((1.0f*max_harmonics)/BANDLIMITED_INCREMENT),BANDLIMITED_HAMSIZE);
+	if(pos > BANDLIMITED_HAMSIZE)
+		pos = BANDLIMITED_HAMSIZE;
+	else if(pos ==0 )
+		pos=1;
+	
+	return pos;
+	
+}
+
 
 
 /*
@@ -300,7 +327,7 @@ static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmo
 		sum += bandlimited_sin(p * i )/i;
 	}
 	
-	return  sum;
+	return  4.0f *sum / BANDLIMITED_PI;
 }
 
 
@@ -320,8 +347,8 @@ static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
-	t_float sum;
-	sum = bandlimited_read4(bandlimited_square_table[pos-1], p);
+	double sum;
+	sum = bandlimited_read(bandlimited_square_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -329,7 +356,30 @@ static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
 	else if(max_harmonics < nearest)
 		sum -= bandlimited_squarepart( max_harmonics%2 == 0 ? max_harmonics+1 : max_harmonics, nearest-1, p);
 	
-	return 4.0f * sum/ BANDLIMITED_PI;
+	return  sum;
+	
+}
+
+/*
+ * This function generates a normalized square wave approximate to the maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_square_aprox(unsigned int max_harmonics, t_float p) {
+	
+	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
+	
+
+	
+	t_float sum;
+	sum = bandlimited_read(bandlimited_square_table[pos-1], p);
+	
+	
+	return sum;
 	
 }
 
@@ -357,7 +407,7 @@ static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_har
 		
 	}
 	
-	return  sum ;
+	return  8.0f * sum /BANDLIMITED_PISQ;
 }
 
 /*
@@ -374,8 +424,8 @@ static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
-	t_float sum;
-	sum = bandlimited_read4(bandlimited_triangle_table[pos-1], p);
+	double sum;
+	sum = bandlimited_read(bandlimited_triangle_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -383,7 +433,31 @@ static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
 	else if(max_harmonics < nearest)
 		sum -= bandlimited_trianglepart( max_harmonics%2 == 0 ? max_harmonics+1 : max_harmonics, nearest-1, p);
 	
-	return 8.0f * sum/ BANDLIMITED_PISQ;	
+	return sum;	
+	
+	
+}
+
+/*
+ * This function generates a normalized triangle wave approximate to the maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_triangle_aprox(unsigned int max_harmonics, t_float p) {
+	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
+	
+
+	
+	double sum;
+	sum = bandlimited_read(bandlimited_triangle_table[pos-1], p);
+	
+
+	
+	return sum;	
 	
 	
 }
@@ -407,7 +481,7 @@ static inline t_float bandlimited_sawwavepart(unsigned int start, unsigned int m
 		sum += bandlimited_sin(p * i)/i;
 	}
 	
-	return   sum;
+	return  2.0f * sum/BANDLIMITED_PI;
 }
 
 /*
@@ -426,7 +500,7 @@ static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p)
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	double sum;
-	sum = bandlimited_read4(bandlimited_sawwave_table[pos-1], p);
+	sum = bandlimited_read(bandlimited_sawwave_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -434,7 +508,32 @@ static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p)
 	else if(max_harmonics < nearest)
 		sum -= bandlimited_sawwavepart(max_harmonics, nearest-1, p);
 	
-	return  sum/ BANDLIMITED_PI;	
+	return  sum;	
+	
+	
+}
+
+/*
+ * This function generates a normalized saw wave approximate to the maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static inline t_float bandlimited_sawwave_aprox(unsigned int max_harmonics, t_float p) {
+	
+	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
+	
+
+	
+	double sum;
+	sum = bandlimited_read(bandlimited_sawwave_table[pos-1], p);
+	
+
+	
+	return  sum;	
 	
 	
 }
@@ -449,7 +548,20 @@ static inline t_float bandlimited_sawwave(unsigned int max_harmonics, t_float p)
  * return t_float the calculated wave
  */
 static t_float bandlimited_saw(unsigned int max_harmonics, t_float p) {
-	return -2.0f * bandlimited_sawwave(max_harmonics,  p);
+	return -1.0f * bandlimited_sawwave(max_harmonics,  p);
+}
+
+/*
+ * This function generates a normalized sawtooth wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_saw_aprox(unsigned int max_harmonics, t_float p) {
+	return -1.0f * bandlimited_sawwave_aprox(max_harmonics,  p);
 }
 
 /*
@@ -462,7 +574,20 @@ static t_float bandlimited_saw(unsigned int max_harmonics, t_float p) {
  * return t_float the calculated wave
  */
 static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
-	return 2.0f * bandlimited_sawwave(max_harmonics, p);
+	return  bandlimited_sawwave(max_harmonics, p);
+}
+
+/*
+ * This function generates a normalized reverse sawtooth wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_rsaw_aprox(unsigned int max_harmonics, t_float p) {
+	return  bandlimited_sawwave_aprox(max_harmonics, p);
 }
 
 
@@ -492,7 +617,7 @@ static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_
 		
 	}
 	
-	return  (4.0f *  sumt / BANDLIMITED_PI) -  sums  ;
+	return  2.0f * ((4.0f *  sumt / BANDLIMITED_PI) -  sums ) / BANDLIMITED_PI ;
 	
 }
 
@@ -512,7 +637,7 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
 	
 	t_float sum;
-	sum = bandlimited_read4(bandlimited_sawtriangle_table[pos-1], p);
+	sum = bandlimited_read(bandlimited_sawtriangle_table[pos-1], p);
 	
 	
 	if(max_harmonics > nearest)
@@ -520,7 +645,32 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
 	else if(max_harmonics < nearest)
 		sum -= bandlimited_sawtrianglepart(max_harmonics, nearest-1, p);
 	
-	return  2.0f * sum/ BANDLIMITED_PI;	
+	return  sum;	
+	
+	
+}
+
+
+/*
+ * This function generates a normalized saw-triangle wave approximate to the maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_sawtriangle_aprox( unsigned int max_harmonics, t_float p) {
+	
+	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
+	
+
+	
+	t_float sum;
+	sum = bandlimited_read(bandlimited_sawtriangle_table[pos-1], p);
+
+	
+	return  sum;	
 	
 	
 }
@@ -643,17 +793,18 @@ static void bandlimited_dmakewavetable(float **table, unsigned int pos, t_float 
  *
  * return int 0 on sucess, 1 on failute (invalid type)
  */
-static inline int t_bandlimitedtypeset(t_bandlimited *x, t_symbol *type) {
+static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
+	x->type=type;
 	if(strcmp(GETSTRING(type), "saw") == 0) {
-		x->generator=  &bandlimited_saw;
+		x->generator=  x->approximate ? &bandlimited_saw_aprox : &bandlimited_saw;
 	} else if(strcmp(GETSTRING(type), "rsaw") == 0) {
-		x->generator=  &bandlimited_rsaw;
+		x->generator=  x->approximate ? &bandlimited_rsaw_aprox : &bandlimited_rsaw;
 	} else if(strcmp(GETSTRING(type), "square") == 0) {
-		x->generator=  &bandlimited_square;
+		x->generator=  x->approximate ? &bandlimited_square_aprox : &bandlimited_square;
 	} else if(strcmp(GETSTRING(type), "triangle") == 0) {
-		x->generator=  &bandlimited_triangle;
+		x->generator=  x->approximate ? &bandlimited_triangle_aprox : &bandlimited_triangle;
 	} else if(strcmp(GETSTRING(type), "sawtriangle") == 0) {
-		x->generator=  &bandlimited_sawtriangle;
+		x->generator=  x->approximate ? &bandlimited_sawtriangle_aprox : &bandlimited_sawtriangle;
 	} else {
 		goto type_unknown;
 		
@@ -695,6 +846,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	t_symbol *type;
 	t_float  max_harmonics;
 	t_float	cutoff;
+	int approximate;
 	
 	if(argc == 0) {
 		error("bandlimited~: missing first argument: type (saw, rsaw, square, triangle, pulse)");
@@ -734,6 +886,16 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	} else {
 		cutoff=0;
 	}
+	if(argc > 4) {
+		if(!ISFLOAT(argv[4])) {
+			error("bandlimited~: forth argument must be a float: approximate waveform (default 0, off)");
+			goto new_error;
+		}
+		approximate = atom_getfloat(&argv[3]);
+	} else {
+		approximate=0;
+	}
+	
 	
     x = (t_bandlimited *)pd_new(bandlimited_class);
     
@@ -746,7 +908,8 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
     x->x_f = f;
 	x->s_nq=0;
 	x->max_harmonics=max_harmonics;
-	if(t_bandlimitedtypeset(x, type) == 1) {
+	x->approximate=approximate;
+	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, using saw", GETSTRING(type));
 		x->generator=  &bandlimited_saw;
 	}
@@ -791,6 +954,16 @@ static void bandlimited_max(t_bandlimited *x, t_float f)
 	else if(val > BANDLIMITED_MAXHARMONICS) 
 		post("bandlimited~: maximum number of harmonics %d might be too high. you are warned", val);
 	x->max_harmonics = val;
+	
+}
+
+static void bandlimited_approximate(t_bandlimited *x, t_float f)
+{
+	int last = x->approximate;
+	x->approximate = f? 1: 0;
+	if(x->approximate != last)
+		bandlimited_typeset(x,x->type); 
+
 	
 }
 
@@ -846,7 +1019,7 @@ static void bandlimited_print(t_bandlimited *x, t_float freq) {
  */
 static void bandlimited_type(t_bandlimited *x, t_symbol *type)
 {
-	if(t_bandlimitedtypeset(x, type) == 1) {
+	if(bandlimited_typeset(x, type) == 1) {
 		error("bandlimited~: Uknown type %s, leaving as is", GETSTRING(type));
 	}
 }
@@ -879,7 +1052,7 @@ static t_int *bandlimited_perform(t_int *w) {
     while (n--)
     {
 		
-		if(*in > 0.0) {
+		if( *in > 0.0) {
 			tf.tf_i[HIOFFSET] = normhipart;
 			dphase += *in * conv;
 			p = tf.tf_d - UNITBIT32;
@@ -888,7 +1061,7 @@ static t_int *bandlimited_perform(t_int *w) {
 			max_harmonics = (int)fmin((int)( x->cutoff / *in++), x->max_harmonics);
 			//max_harmonics = (int)( x->cutoff / *in++);
 			//if(max_harmonics > x->max_harmonics)
-				//max_harmonics = x->max_harmonics;
+			//	max_harmonics = x->max_harmonics;
 		
 
 			*out++ =  x->generator(max_harmonics, p);
@@ -944,6 +1117,8 @@ extern void bandlimited_tilde_setup(void)
 					gensym("cutoff"), A_FLOAT, 0);		
     class_addmethod(bandlimited_class, (t_method)bandlimited_max,
 					gensym("max"), A_FLOAT, 0);		
+    class_addmethod(bandlimited_class, (t_method)bandlimited_approximate,
+					gensym("approximate"), A_FLOAT, 0);		
 	
     debug(class_addmethod(bandlimited_class, (t_method)bandlimited_testsine,
 					gensym("testsine"), A_FLOAT, 0);)		

@@ -1,9 +1,6 @@
 #N canvas 837 332 668 475 10;
 #X text 392 364 see:;
 #X text 7 367 (C) Paulo Casaes \, 2010 GPL v2;
-#X text 6 -51 Generates a bandlimited waveform (square \, saw \, reverse
-saw \, triangle and saw-triangle). It's porupse is to producse a signal
-without aliasing.;
 #X obj 447 -51 cnv 15 210 400 empty empty empty 20 12 0 14 -261682
 -66577 0;
 #X obj 537 144 mtof;
@@ -11,7 +8,7 @@ without aliasing.;
 #X obj 527 302 dac~;
 #X obj 458 179 bng 15 250 50 1 empty empty empty 17 7 0 10 -262144
 -1 -1;
-#X msg 595 200 0;
+#X msg 575 200 0;
 #X obj 540 203 sig~;
 #X floatatom 539 175 5 0 0 0 - - -;
 #X obj 580 136 samplerate~;
@@ -45,24 +42,15 @@ without aliasing.;
 #X obj 500 324 tabwrite~ \$0.view;
 #X obj -4 136 cnv 15 450 87 empty empty empty 20 12 0 14 -232576 -66577
 0;
-#X msg 190 142 type rsaw;
-#X obj 190 161 s \$0.set;
-#X obj 257 161 s \$0.set;
-#X msg 257 142 type saw;
-#X obj 324 161 s \$0.set;
-#X msg 324 142 type square;
-#X obj 188 201 s \$0.set;
-#X msg 188 182 type triangle;
-#X obj 283 201 s \$0.set;
-#X msg 283 182 type sawtriangle;
+#X obj 264 160 s \$0.set;
+#X msg 264 141 type square;
+#X obj 176 161 s \$0.set;
+#X msg 176 142 type triangle;
+#X obj 342 162 s \$0.set;
+#X msg 342 143 type sawtriangle;
 #X text 5 157 The type method changes the;
-#X text 5 175 waveform type being generated;
 #X obj -4 -2 cnv 15 450 65 empty empty empty 20 12 0 14 -203904 -66577
 0;
-#X text -1 -3 The cutoff method sets a limit to the number of harmonics
-generated based on frequency. This acts much like low pass filter.
-By default the nyquist limit is set (cannot be set higher than this).
-0 resets to the default.;
 #X msg 366 20 cutoff \$1;
 #X floatatom 366 1 5 0 0 0 - - -;
 #X obj 366 39 s \$0.set;
@@ -96,36 +84,73 @@ cutoff;
 #X text 8 238 max cutoff approximate are optional \, 0 sets their defaults.
 ;
 #X obj 422 358 bl.sq~ 0 1;
-#X obj 439 380 bl.rsaw~ 0 1;
+#X obj 401 381 bl.rsaw~ 0 1;
 #X obj 565 358 bl.saw~ 0 1;
 #X obj 491 358 bl.tri~ 0 1;
-#X obj 518 380 bl.sawtri~ 0 1;
-#X text 33 389 v 0.91;
-#X connect 4 0 10 0;
-#X connect 5 0 4 0;
-#X connect 7 0 8 0;
-#X connect 7 0 18 0;
-#X connect 8 0 43 1;
-#X connect 9 0 43 0;
-#X connect 10 0 9 0;
-#X connect 11 0 16 0;
-#X connect 12 0 11 0;
-#X connect 13 0 7 0;
-#X connect 13 0 43 0;
-#X connect 14 0 15 1;
-#X connect 15 0 6 0;
-#X connect 15 0 6 1;
-#X connect 16 0 10 0;
-#X connect 20 0 21 0;
-#X connect 23 0 22 0;
-#X connect 25 0 24 0;
-#X connect 27 0 26 0;
-#X connect 29 0 28 0;
-#X connect 34 0 36 0;
-#X connect 35 0 34 0;
-#X connect 38 0 40 0;
-#X connect 40 0 39 0;
-#X connect 43 0 15 0;
-#X connect 43 0 18 0;
-#X connect 45 0 46 0;
-#X connect 46 0 44 0;
+#X obj 480 381 bl.sawtri~ 0 1;
+#X obj 573 380 bl.pulse~ 0 1;
+#N canvas 0 22 563 298 dutycycle 0;
+#X obj 45 82 +~ 1;
+#X obj 55 203 s~ \$0.dc;
+#X obj 43 54 osc~ 1.01;
+#X obj 46 109 /~ 2;
+#X obj 55 146 *~ 0.8;
+#X obj 49 180 +~ 0.1;
+#X text 141 46 The third inlet takes a signal value between 0 and 1
+which corresponds to the dutycycle \, the ratio between pulse duration
+and the period.;
+#X text 144 93 A value of 0.5 will create a squarewave much like bl.sq~
+(though computationally more expensive). Any other value will create
+an assymetrical pulse wave.;
+#X connect 0 0 3 0;
+#X connect 2 0 0 0;
+#X connect 3 0 4 0;
+#X connect 4 0 5 0;
+#X connect 5 0 1 0;
+#X restore 245 386 pd dutycycle;
+#X obj 606 193 r~ \$0.dc;
+#X text 6 -51 Generates a bandlimited waveform (square \, pulse \,
+saw \, reverse saw \, triangle and saw-triangle). It's porpuse is to
+produce a signal without aliasing.;
+#X text -1 -3 The cutoff method sets a limit to the number of harmonics
+generated based on frequency. This acts much like a low pass filter.
+By default the nyquist limit is set (cannot be set higher than this).
+0 resets to the default.;
+#X text 5 175 waveform being generated;
+#X text 33 389 v 0.92;
+#X msg 194 182 type rsaw;
+#X obj 194 201 s \$0.set;
+#X obj 256 203 s \$0.set;
+#X msg 256 184 type saw;
+#X obj 320 203 s \$0.set;
+#X msg 320 184 type pulse;
+#X connect 3 0 9 0;
+#X connect 4 0 3 0;
+#X connect 6 0 7 0;
+#X connect 6 0 17 0;
+#X connect 7 0 36 1;
+#X connect 8 0 36 0;
+#X connect 9 0 8 0;
+#X connect 10 0 15 0;
+#X connect 11 0 10 0;
+#X connect 12 0 6 0;
+#X connect 12 0 36 0;
+#X connect 13 0 14 1;
+#X connect 14 0 5 0;
+#X connect 14 0 5 1;
+#X connect 15 0 9 0;
+#X connect 20 0 19 0;
+#X connect 22 0 21 0;
+#X connect 24 0 23 0;
+#X connect 27 0 29 0;
+#X connect 28 0 27 0;
+#X connect 31 0 33 0;
+#X connect 33 0 32 0;
+#X connect 36 0 14 0;
+#X connect 36 0 17 0;
+#X connect 38 0 39 0;
+#X connect 39 0 37 0;
+#X connect 51 0 36 2;
+#X connect 56 0 57 0;
+#X connect 59 0 58 0;
+#X connect 61 0 60 0;

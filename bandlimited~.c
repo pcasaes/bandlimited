@@ -22,7 +22,7 @@
  http://http://gitorious.org/~saturno
  mailto:irmaosaturno@gmail.com
  
- v 0.90
+ v 0.92
  
  
  Copyright (c) 1997-1999 Miller Puckette and others
@@ -117,6 +117,7 @@ static float **bandlimited_sawwave_table=0;
 static float **bandlimited_sawtriangle_table=0;
 static float **bandlimited_square_table=0;
 
+
 union tabfudge
 {
     double tf_d;
@@ -147,7 +148,7 @@ typedef struct _bandlimited
 		
 		
 		//type
-		t_float (*generator)(unsigned int, t_float);
+		t_float (*generator)(unsigned int, t_float, t_float);
 		
 		
 		
@@ -328,8 +329,7 @@ static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmo
 	
 	return  4.0f *sum / BANDLIMITED_PI;
 }
-
-
+							   
 
 /*
  * This function generates a normalized square wave with a maximum number
@@ -340,7 +340,7 @@ static t_float bandlimited_squarepart(unsigned int start, unsigned int max_harmo
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_square(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
@@ -368,7 +368,7 @@ static t_float bandlimited_square(unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_square_aprox(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_square_aprox(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	
 	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
 	
@@ -418,7 +418,7 @@ static t_float bandlimited_trianglepart(unsigned int start, unsigned int max_har
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
 	unsigned int nearest = (pos) * BANDLIMITED_INCREMENT;
@@ -446,7 +446,7 @@ static t_float bandlimited_triangle(unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_triangle_aprox(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_triangle_aprox(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
 	
 
@@ -546,7 +546,7 @@ static inline t_float bandlimited_sawwave_aprox(unsigned int max_harmonics, t_fl
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_saw(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_saw(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	return -1.0f * bandlimited_sawwave(max_harmonics,  p);
 }
 
@@ -559,7 +559,7 @@ static t_float bandlimited_saw(unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_saw_aprox(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_saw_aprox(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	return -1.0f * bandlimited_sawwave_aprox(max_harmonics,  p);
 }
 
@@ -572,7 +572,7 @@ static t_float bandlimited_saw_aprox(unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	return  bandlimited_sawwave(max_harmonics, p);
 }
 
@@ -585,8 +585,38 @@ static t_float bandlimited_rsaw(unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_rsaw_aprox(unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_rsaw_aprox(unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	return  bandlimited_sawwave_aprox(max_harmonics, p);
+}
+
+
+/*
+ * This function generates a normalized pulse wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ * param t_float dutycycle
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_pulse(unsigned int max_harmonics, t_float p, t_float dutycycle) {
+	return (bandlimited_saw(max_harmonics, p, dutycycle) - bandlimited_saw(max_harmonics, p + dutycycle, dutycycle)) -2.0f* (0.5f - dutycycle);
+}
+
+/*
+ * This function generates a normalized pulse wave with a maximum number
+ * of harmonics at a certain phase.
+ *
+ * param unsigned int maxium number of generated harmonics
+ * param t_float phase
+ * param t_float dutycycle
+ *
+ * return t_float the calculated wave
+ */
+static t_float bandlimited_pulse_aprox(unsigned int max_harmonics, t_float p, t_float dutycycle) {
+	return (bandlimited_saw_aprox(max_harmonics, p, dutycycle) - bandlimited_saw_aprox(max_harmonics, p + dutycycle, dutycycle)) -2.0f* (0.5f - dutycycle);
+								   
 }
 
 
@@ -629,7 +659,7 @@ static t_float bandlimited_sawtrianglepart(unsigned int start, unsigned int max_
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p, t_float dutycycle) {
 
 	unsigned int pos = bandlimited_harmpos(max_harmonics);
 	
@@ -659,7 +689,7 @@ static t_float bandlimited_sawtriangle( unsigned int max_harmonics, t_float p) {
  *
  * return t_float the calculated wave
  */
-static t_float bandlimited_sawtriangle_aprox( unsigned int max_harmonics, t_float p) {
+static t_float bandlimited_sawtriangle_aprox( unsigned int max_harmonics, t_float p, t_float dutycycle) {
 	
 	unsigned int pos = bandlimited_harmposfloor(max_harmonics);
 	
@@ -729,7 +759,6 @@ static void bandlimited_delete(t_bandlimited *x) {
 		bandlimited_square_table=0;
 		freebytes(bandlimited_sawtriangle_table, sizeof(float *) * BANDLIMITED_HAMSIZE);
 		bandlimited_sawtriangle_table=0;
-		
 		
 		
 	}
@@ -804,6 +833,8 @@ static inline int bandlimited_typeset(t_bandlimited *x, t_symbol *type) {
 		x->generator=  x->approximate ? &bandlimited_triangle_aprox : &bandlimited_triangle;
 	} else if(strcmp(GETSTRING(type), "sawtriangle") == 0) {
 		x->generator=  x->approximate ? &bandlimited_sawtriangle_aprox : &bandlimited_sawtriangle;
+	} else if(strcmp(GETSTRING(type), "pulse") == 0) {
+		x->generator=  x->approximate ? &bandlimited_pulse_aprox : &bandlimited_pulse;
 	} else {
 		goto type_unknown;
 		
@@ -824,7 +855,8 @@ static void bandlimited_dmakealltables(void) {
    	bandlimited_triangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    	bandlimited_square_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
    	bandlimited_sawtriangle_table = (float **)getbytes(sizeof(float *) * BANDLIMITED_HAMSIZE);
-	
+
+							   
    	for(i =0; i < BANDLIMITED_HAMSIZE; i ++) {
 		bandlimited_dmakewavetable(bandlimited_sawwave_table,i, bandlimited_sawwavepart);
 
@@ -833,7 +865,8 @@ static void bandlimited_dmakealltables(void) {
 		bandlimited_dmakewavetable(bandlimited_square_table,i, bandlimited_squarepart);
 
 		bandlimited_dmakewavetable(bandlimited_sawtriangle_table,i, bandlimited_sawtrianglepart);
-   	}
+
+	}
 	bandlimited_sin = &bandlimited_sin_4point;
 	
 }
@@ -918,6 +951,7 @@ static void *bandlimited_new( t_symbol *s, int argc, t_atom *argv) {
 	
 	inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_float, gensym("ft1"));
 	
+    inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal,  &s_signal);
 	
     outlet_new(&x->x_obj, gensym("signal"));
 	
@@ -996,6 +1030,8 @@ static void bandlimited_print(t_bandlimited *x, t_float freq) {
 		generator = &bandlimited_trianglepart;
 	} else if(x->generator == &bandlimited_sawtriangle) {
 		generator = &bandlimited_sawtrianglepart;
+	} else if(x->generator == &bandlimited_pulse) {
+		generator = &bandlimited_sawwavepart;
 	}
 	
 	if(generator) {
@@ -1035,9 +1071,10 @@ static void bandlimited_type(t_bandlimited *x, t_symbol *type)
 static t_int *bandlimited_perform(t_int *w) {
     t_bandlimited *x = (t_bandlimited *)(w[1]);
     t_float *in = (t_float *)(w[2]);
-    t_float *out = (t_float *)(w[3]);
-    int n = (int)(w[4]);
-	t_signal *sp = (t_signal *)(w[5]);
+    t_float *dutycycle = (t_float *)(w[3]);
+    t_float *out = (t_float *)(w[4]);
+    int n = (int)(w[5]);
+	t_signal *sp = (t_signal *)(w[6]);
 	t_float p;
     double dphase = x->x_phase + UNITBIT32;
     union tabfudge tf;
@@ -1073,17 +1110,18 @@ static t_int *bandlimited_perform(t_int *w) {
 			//	max_harmonics = x->max_harmonics;
 		
 
-			*out++ =  x->generator(max_harmonics, p);
+			*out++ =  x->generator(max_harmonics, p, *dutycycle++);
 		} else {
 			*out++ = 0.0f;
 			in++;
+			dutycycle++;
 			tf.tf_d=0.0;
 		}
     }
     tf.tf_i[HIOFFSET] = normhipart;
     x->x_phase = tf.tf_d - UNITBIT32;	
 	
-    return (w+6);	
+    return (w+7);	
 }
 
 
@@ -1097,7 +1135,7 @@ static void bandlimited_dsp(t_bandlimited *x, t_signal **sp)
 {
 
     
-	dsp_add(bandlimited_perform, 5, x, sp[0]->s_vec, sp[1]->s_vec, sp[0]->s_n, sp[0]);
+	dsp_add(bandlimited_perform, 6, x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n, sp[0]);
 }
 
 

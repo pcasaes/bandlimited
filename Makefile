@@ -19,7 +19,7 @@ darwin: bandlimited~.c
 
 win32: bandlimited~.c
 	${WIN_CC} $(NTCFLAGS) -o bandlimited~.o  -c  bandlimited~.c   
-	${WIN_CC} $(NTCFLAGS) -Lc:/Arquivos\ de\ programas/pd/bin/ -lpd  -shared -o bandlimited~.dll   bandlimited~.o -W1  
+	${WIN_CC} $(NTCFLAGS) -LC:/Program\ Files/pd/bin -lpd  -shared -o bandlimited~.dll   bandlimited~.o -W1  
  	#${WIN_STRIP} --strip-unneeded bandlimited~.dll
 
 clean:

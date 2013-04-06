@@ -12,7 +12,7 @@ or
 
 Copy the external along with it's abstractions to your path.
 
-Make might complain that m_pd.h is missing. You can either change the Makefile to point to its proper place or copy it to the muug folder. Or copy m_pd.h to /usr/include (unix system) or MingWG Folder\include
+Make might complain that m_pd.h is missing. You can either change the Makefile to point to its proper place or copy it to the bandlimited folder. Or copy m_pd.h to /usr/include (unix system) or MingWG Folder\include
 
 In windows make will look for pd.dll in c:/Arquivos\ de\ programas/pd/bin/, if PD is not installed there you should change that path.
 

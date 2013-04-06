@@ -1,128 +1,31 @@
 /**
  
  
- Copyright (C) 2010 Paulo Casaes
- 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- as published by the Free Software Foundation; either version 2
- of the License, or (at your option) any later version.
- 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- 
+Apache License 2.0
+
+bandlimited~
+    Copyright [2010] Paulo Casaes
+
+      This product includes software developed at
+      Gitorious (https://gitorious.org/bandlimited).
  
  -- 
  http://http://gitorious.org/~saturno
  mailto:irmaosaturno@gmail.com
  
- v 0.92
- 
- 
- Copyright (c) 1997-1999 Miller Puckette and others
- Code was liberally borrowed from d_osc.c and d_array.c
- 
+ v 0.93
  */
 
 #include "m_pd.h"
 #include <math.h>
 #include <string.h>
-
-#define BANDLIMITED_PI     3.14159265358979323846
-#define BANDLIMITED_PISQ   9.8696044010893586188
-
-#ifdef BANDLIMITED_MAXHARMONICS
-#else
-#define BANDLIMITED_MAXHARMONICS 1104 // down to about 20hz at 44.1khz, 40hz at 88.2khz...
-#endif
-
-#define BANDLIMITED_TABSIZE 2048						//2048
-#define BANDLIMITED_FINVNPOINTS	0.00048828125				//0.00048828125   // 1.0 / BANDLIMITED_TABSIZE
-
-#define GETSTRING(s) (s)->s_name
-#define ISFLOAT(a) (a.a_type==A_FLOAT)
-#define ISSYMBOL(a) (a.a_type==A_SYMBOL)
-
-#define UNITBIT32 1572864.  /* 3*2^19; bit 32 has place value 1 */
-
-/* machine-dependent definitions.  These ifdefs really
- should have been by CPU type and not by operating system! */
-#ifdef IRIX
-/* big-endian.  Most significant byte is at low address in memory */
-#define HIOFFSET 0    /* word offset to find MSB */
-#define LOWOFFSET 1    /* word offset to find LSB */
-#define int32 long  /* a data type that has 32 bits */
-#endif /* IRIX */
-
-#ifdef MSW
-/* little-endian; most significant byte is at highest address */
-#define HIOFFSET 1
-#define LOWOFFSET 0
-#define int32 long
-#endif
-
-#if defined(__FreeBSD__) || defined(__APPLE__)
-#include <machine/endian.h>
-#endif
-
-#ifdef __linux__
-#include <endian.h>
-#endif
-
-#if defined(__unix__) || defined(__APPLE__)
-#if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN)                         
-#if defined(__USE_BSD)
-#error No byte order defined                                                    
-#else
-# define LITTLE_ENDIAN  __LITTLE_ENDIAN
-# define BIG_ENDIAN     __BIG_ENDIAN
-# define PDP_ENDIAN     __PDP_ENDIAN
-# define BYTE_ORDER     __BYTE_ORDER
-#endif
-#endif                                                                          
-
-#if BYTE_ORDER == LITTLE_ENDIAN                                             
-#define HIOFFSET 1                                                              
-#define LOWOFFSET 0                                                             
-#else                                                                           
-#define HIOFFSET 0    /* word offset to find MSB */                             
-#define LOWOFFSET 1    /* word offset to find LSB */                            
-#endif /* __BYTE_ORDER */                                                       
-#include <sys/types.h>
-#define int32 int32_t
-#endif /* __unix__ or __APPLE__*/
+#include "bandlimited_defs.h"
+#include "bandlimited_util.h"
 
 
-#define BANDLIMITED_INCREMENT 8						//16		4
-#define BANDLIMITED_HAMSTART 1104					//1104
-#define BANDLIMITED_HAMSIZE 138						//69			276  BANDLIMITED_HAMSTART / BANDLIMITED_INCREMENT
-
-#define DEBUG 0
-#ifdef DEBUG
-#define debug(x) x
-#else
-#define debug(x)
-#endif
-
-static long bandlimited_count=0l;
-static float *bandlimited_sin_table=0;
-static float **bandlimited_triangle_table=0;
-static float **bandlimited_sawwave_table=0;
-static float **bandlimited_sawtriangle_table=0;
-static float **bandlimited_square_table=0;
 
 
-union tabfudge
-{
-    double tf_d;
-    int32 tf_i[2];
-};
+
 
 static t_class *bandlimited_class;
 
@@ -157,46 +60,6 @@ typedef struct _bandlimited
 
 #define bandlimited_read(q,w) bandlimited_read4((q),(w))
 
-/*
- * This function performs a 4 point interpolation lookup on the table.
- * code borrowed from tabread4~
- *
- * param float *  pointer to wavetable
- * param t_float phase to lookup
- *
- * return t_float result of the table lookup
- */
-static inline t_float bandlimited_read4(float *table, t_float p) {
-	
-    double dphase;
-    int normhipart;
-    union tabfudge tf;
-    float *tab = table, *addr, a, b, c,d,cminusb, frac;
-	
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-	
-	
-	
-	dphase = (double)(p * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
-	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1)) + 1;
-	tf.tf_i[HIOFFSET] = normhipart;
-	frac = tf.tf_d - UNITBIT32;
-	a = addr[-1];
-	b = addr[0];
-	c = addr[1];
-	d = addr[2];
-	
-	
-	cminusb = c-b;
-	return b + frac * (
-					   cminusb - 0.1666667f * (1.-frac) * (
-														   (d - a - 3.0f * cminusb) * frac + (d + 2.0f*a - 3.0f*b)
-														   )
-					   );
-}
 
 
 
@@ -234,36 +97,6 @@ static double bandlimited_sin_4point(t_float p) {
 	return bandlimited_read(bandlimited_sin_table, p);
 }
 
-#ifdef DEBUG
-/*
- * This function performs sin(2pi * x) using linear interpolation on top of a wavetable.
- * It's here for testing purposes.
- *
- * param t_float phase
- *
- * return double evaluation of sin function
-*/
-static double bandlimited_sin_lin(t_float p) {
-    double dphase;
-    int normhipart;
-    union tabfudge tf;
-    float *tab = bandlimited_sin_table, *addr, f1, f2, frac;
-	
-    tf.tf_d = UNITBIT32;
-    normhipart = tf.tf_i[HIOFFSET];
-	
-	
-	
-	dphase = (double)(p * (float)(BANDLIMITED_TABSIZE)) + UNITBIT32;
-	tf.tf_d = dphase;
-	addr = tab + (tf.tf_i[HIOFFSET] & (BANDLIMITED_TABSIZE-1))+1;
-	tf.tf_i[HIOFFSET] = normhipart;
-	frac = tf.tf_d - UNITBIT32;
-	f1 = addr[0];
-	f2 = addr[1];
-	return (f1 + frac * (f2 - f1));
-}
-#endif
 
 /*
  * calculates the wavetable position that is nearest to the number of 

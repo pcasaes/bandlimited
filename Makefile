@@ -10,7 +10,7 @@ WIN_STRIP=strip.exe
 
 linux: bandlimited~.c
 	gcc $(CFLAGS) -o bandlimited~.o -c bandlimited~.c
-     gcc $(DARWINCFLAGS) -o bandlimited_util.o -c bandlimited_util.c
+	gcc $(CFLAGS) -o bandlimited_util.o -c bandlimited_util.c
 	ld -export_dynamics -shared -o bandlimited~.pd_linux bandlimited_util.o bandlimited~.o
 	strip --strip-unneeded bandlimited~.pd_linux
 

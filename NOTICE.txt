@@ -2,5 +2,5 @@ bandlimited~
     Copyright [2010] Paulo Casaes
 
       This product includes software developed at
-      Gitorious (https://gitorious.org/bandlimited).
+      Github (https://github.com/pcasaes/bandlimited).
 

@@ -7,11 +7,11 @@ bandlimited~
     Copyright [2010] Paulo Casaes
 
       This product includes software developed at
-      Gitorious (https://gitorious.org/bandlimited).
+      Github (https://github.com/pcasaes/bandlimited).
  
  -- 
- http://http://gitorious.org/~saturno
- mailto:irmaosaturno@gmail.com
+ https://github.com/pcasaes/bandlimited
+ mailto:pcasaes@gmail.com
  
  v 0.93
  */

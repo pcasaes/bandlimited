@@ -1,22 +1,22 @@
-#N canvas 415 103 668 475 10;
+#N canvas 415 103 692 489 10;
 #X text 392 364 see:;
 #X obj 447 -51 cnv 15 210 400 empty empty empty 20 12 0 14 -261682
 -66577 0;
 #X obj 537 144 mtof;
-#X floatatom 537 123 5 0 0 0 - - -;
+#X floatatom 537 123 5 0 0 0 - - -, f 5;
 #X obj 527 302 dac~;
 #X obj 458 179 bng 15 250 50 1 empty empty empty 17 7 0 10 -262144
 -1 -1;
 #X msg 575 200 0;
 #X obj 540 203 sig~;
-#X floatatom 539 175 5 0 0 0 - - -;
+#X floatatom 539 175 5 0 0 0 - - -, f 5;
 #X obj 580 136 samplerate~;
 #X obj 579 115 loadbang;
 #X obj 455 150 r \$0.set;
 #N canvas 0 22 542 489 fader 0;
 #X obj 97 310 dbtorms;
 #X obj 100 102 vsl 30 64 101 1 1 0 empty empty empty 0 -9 0 10 -203904
--1 -1 2800 1;
+-1 -1 0 1;
 #X obj 93 238 - 1;
 #X msg 93 260 100 \$1;
 #X obj 94 282 -;
@@ -51,11 +51,11 @@
 #X obj -4 -2 cnv 15 450 65 empty empty empty 20 12 0 14 -203904 -66577
 0;
 #X msg 366 20 cutoff \$1;
-#X floatatom 366 1 5 0 0 0 - - -;
+#X floatatom 366 1 5 0 0 0 - - -, f 5;
 #X obj 366 39 s \$0.set;
 #X obj -4 60 cnv 15 450 75 empty empty empty 20 12 0 14 -170745 -66577
 0;
-#X floatatom 362 68 5 0 0 0 - - -;
+#X floatatom 362 68 5 0 0 0 - - -, f 5;
 #X obj 361 108 s \$0.set;
 #X msg 362 87 max \$1;
 #X text 1 62 The max method sets the maximum number of harmonics to
@@ -67,7 +67,7 @@ which should cover all frequencies between 20hz and 22050 hz at 44.1kHz.
 0;
 #X obj 498 225 bandlimited~ saw 77.78;
 #X obj 364 323 s \$0.set;
-#X obj 365 284 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
+#X obj 365 284 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
 #X msg 365 302 approximate \$1;
 #X text 2 255 bandlimited~ works by using a series of wavetables with
@@ -116,7 +116,6 @@ generated based on frequency. This acts much like a low pass filter.
 By default the nyquist limit is set (cannot be set higher than this).
 0 resets to the default.;
 #X text 5 175 waveform being generated;
-#X text 33 389 v 0.92;
 #X msg 194 182 type rsaw;
 #X obj 194 201 s \$0.set;
 #X obj 256 203 s \$0.set;
@@ -124,6 +123,7 @@ By default the nyquist limit is set (cannot be set higher than this).
 #X obj 320 203 s \$0.set;
 #X msg 320 184 type pulse;
 #X text 7 367 (C) Paulo Casaes \, 2010 Apache License 2;
+#X text 33 389 v 1.0.0;
 #X connect 2 0 8 0;
 #X connect 3 0 2 0;
 #X connect 5 0 6 0;
@@ -151,6 +151,6 @@ By default the nyquist limit is set (cannot be set higher than this).
 #X connect 37 0 38 0;
 #X connect 38 0 36 0;
 #X connect 50 0 35 2;
-#X connect 55 0 56 0;
-#X connect 58 0 57 0;
-#X connect 60 0 59 0;
+#X connect 54 0 55 0;
+#X connect 57 0 56 0;
+#X connect 59 0 58 0;
